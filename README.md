@@ -222,7 +222,7 @@ interface Adapter<T extends MessageMeta = MessageMeta> {
   sendMessage: (message: M, transfer: Transferable[]) => MaybePromise<void>
 
   /** Register a message listener */
-  onMessage: (callback: (message?: Partial<Message<MessageMeta>>) => void) => MaybePromise<OffMessage | void>
+  onMessage: (callback: (message?: Partial<Message<T>>) => void) => MaybePromise<OffMessage | void>
 }
 ```
 
