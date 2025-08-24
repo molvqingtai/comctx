@@ -28,12 +28,14 @@ void (async () => {
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
-    const value = await counter.decrement()
-    document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
+    await counter.decrement()
   })
 
   document.querySelector<HTMLButtonElement>('#increment')!.addEventListener('click', async () => {
-    const value = await counter.increment()
+    await counter.increment()
+  })
+
+  counter.onChange((value) => {
     document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
   })
 })().catch(console.error)
