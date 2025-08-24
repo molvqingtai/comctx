@@ -1,6 +1,6 @@
 {
   "name": "comctx",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Cross-context RPC solution with type safety and flexible adapters.",
   "type": "module",
   "main": "core/dist/index.js",
