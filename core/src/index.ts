@@ -2,7 +2,55 @@ import uuid from '@/utils/uuid'
 import setIntervalImmediate from '@/utils/setIntervalImmediate'
 import extractMessage from './extractMessage'
 
+export const MESSAGE_TYPE = {
+  APPLY: 'apply',
+  CALLBACK: 'callback',
+  PING: 'ping',
+  PONG: 'pong'
+} as const
+
+export const MESSAGE_SENDER = {
+  PROVIDE: 'provide',
+  INJECT: 'inject'
+} as const
+
 type MaybePromise<T> = T | Promise<T>
+
+export type MessageType = (typeof MESSAGE_TYPE)[keyof typeof MESSAGE_TYPE]
+
+export type MessageSender = (typeof MESSAGE_SENDER)[keyof typeof MESSAGE_SENDER]
+
+export type MessageMeta<T extends Record<string, any> = Record<string, any>> = T
+
+export interface Message<T extends MessageMeta = MessageMeta> {
+  readonly type: MessageType
+  readonly id: string
+  readonly path: string[]
+  readonly sender: MessageSender
+  readonly callbackIds?: string[]
+  readonly args?: any[]
+  readonly error?: string
+  readonly data?: any
+  readonly meta: T
+  readonly namespace: string
+  readonly timeStamp: number
+}
+
+export type OffMessage = () => MaybePromise<void>
+
+export type SendMessage<T extends MessageMeta = MessageMeta> = (
+  message: Message<T>,
+  transfer: Transferable[]
+) => MaybePromise<void>
+
+export type OnMessage<T extends MessageMeta = MessageMeta> = (
+  callback: (message?: Partial<Message<T>>) => void
+) => MaybePromise<OffMessage | void>
+
+export interface Adapter<T extends MessageMeta = MessageMeta> {
+  sendMessage: SendMessage<T>
+  onMessage: OnMessage<T>
+}
 
 export type Context<T extends Record<string, any> = Record<string, any>> = (...args: any[]) => T
 
@@ -15,42 +63,31 @@ export interface Options {
   backup?: boolean
 }
 
-export interface Message {
-  type: 'apply' | 'callback' | 'ping' | 'pong'
-  id: string
-  path: string[]
-  sender: 'provide' | 'inject'
-  callbackIds?: string[]
-  args: any[]
-  error?: string
-  data?: any
-  namespace: string
-  timeStamp: number
-}
+const checkMessage = (message?: Partial<Message>) => {
+  const isType = !!message?.type && Object.values(MESSAGE_TYPE).includes(message.type)
 
-export type OffMessage = () => MaybePromise<void>
+  const isId = !!message?.id && typeof message.id === 'string'
 
-export type SendMessage<M extends Message = Message> = (message: M, transfer: Transferable[]) => MaybePromise<void>
+  const isPath =
+    !!message?.path && Array.isArray(message.path) && message.path.every((path) => typeof path === 'string')
+  const isSender = !!message?.sender && Object.values(MESSAGE_SENDER).includes(message.sender)
 
-export type OnMessage<M extends Message = Message> = (
-  callback: (message?: Partial<M>) => void
-) => MaybePromise<OffMessage | void>
+  const isCallbackIds =
+    typeof message?.callbackIds === 'undefined' ||
+    (Array.isArray(message.callbackIds) && message.callbackIds.every((id) => typeof id === 'string'))
 
-export interface Adapter<M extends Message = Message> {
-  sendMessage: SendMessage<M>
-  onMessage: OnMessage<M>
-}
+  const isArgs = typeof message?.args === 'undefined' || Array.isArray(message.args)
 
-const isInvalidMessage = (message?: Partial<Message>) => {
+  const isError = typeof message?.error === 'undefined' || typeof message.error === 'string'
+
+  const isMeta = !!message?.meta && message.meta !== null && typeof message.meta === 'object'
+
+  const isNamespace = !!message?.namespace && typeof message.namespace === 'string'
+
+  const isTimeStamp = !!message?.timeStamp && typeof message.timeStamp === 'number'
+
   return (
-    !message ||
-    !message.type ||
-    !message.id ||
-    !message.path ||
-    !message.sender ||
-    !message.args ||
-    !message.namespace ||
-    !message.timeStamp
+    isType && isId && isPath && isSender && isCallbackIds && isArgs && isError && isMeta && isNamespace && isTimeStamp
   )
 }
 
@@ -64,11 +101,11 @@ const heartbeatCheck = async (adapter: Adapter, options: Required<Options>) => {
       try {
         const messageId = uuid()
         const offMessage = await adapter.onMessage((message) => {
-          if (isInvalidMessage(message)) return
+          if (!checkMessage(message)) return
           const _message = message as Message
           if (_message.namespace !== options.namespace) return
-          if (_message.sender !== 'provide') return
-          if (_message.type !== 'pong') return
+          if (_message.sender !== MESSAGE_SENDER.PROVIDE) return
+          if (_message.type !== MESSAGE_TYPE.PONG) return
           if (_message.id !== messageId) return
           resolve()
         })
@@ -76,11 +113,11 @@ const heartbeatCheck = async (adapter: Adapter, options: Required<Options>) => {
         offMessage && offMessages.add(offMessage)
 
         const pingMessage: Message = {
-          type: 'ping',
+          type: MESSAGE_TYPE.PING,
+          sender: MESSAGE_SENDER.INJECT,
           id: messageId,
           path: [],
-          sender: 'inject',
-          args: [],
+          meta: {},
           namespace: options.namespace,
           timeStamp: Date.now()
         }
@@ -114,17 +151,19 @@ const heartbeatCheck = async (adapter: Adapter, options: Required<Options>) => {
 
 const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapter, options: Required<Options>) => {
   adapter.onMessage(async (message) => {
-    if (isInvalidMessage(message)) return
+    if (!checkMessage(message)) return
     const _message = message as Message
     if (_message.namespace !== options.namespace) return
-    if (_message.sender !== 'inject') return
+    if (_message.sender !== MESSAGE_SENDER.INJECT) return
 
     switch (_message!.type) {
-      case 'ping': {
+      case MESSAGE_TYPE.PING: {
         const pongMessage: Message = {
-          ..._message!,
-          type: 'pong',
-          sender: 'provide',
+          type: MESSAGE_TYPE.PONG,
+          sender: MESSAGE_SENDER.PROVIDE,
+          id: _message.id,
+          path: _message.path,
+          meta: _message.meta,
           namespace: options.namespace,
           timeStamp: Date.now()
         }
@@ -136,17 +175,18 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
         }
         break
       }
-      case 'apply': {
+      case MESSAGE_TYPE.APPLY: {
         try {
           const mapArgs = _message.args?.map((arg) => {
             if (_message.callbackIds?.includes(arg)) {
               return (...args: any[]) => {
                 const callbackMessage: Message = {
-                  ..._message,
+                  type: MESSAGE_TYPE.CALLBACK,
+                  sender: MESSAGE_SENDER.PROVIDE,
                   id: arg,
+                  path: _message.path,
+                  meta: _message.meta,
                   data: args,
-                  type: 'callback',
-                  sender: 'provide',
                   namespace: options.namespace,
                   timeStamp: Date.now()
                 }
@@ -161,16 +201,21 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
               return arg
             }
           })
+          // @ts-expect-error: initial write
           _message.data = await (
             _message.path?.reduce((acc, key) => acc[key], target) as unknown as (...args: any[]) => any
-          ).apply(target, mapArgs)
+          ).apply(target, mapArgs || [])
         } catch (error) {
+          // @ts-expect-error: initial write
           _message.error = (error as Error).message
         }
         const responseMessage: Message = {
-          ..._message,
-          type: 'apply',
-          sender: 'provide',
+          type: MESSAGE_TYPE.APPLY,
+          sender: MESSAGE_SENDER.PROVIDE,
+          id: _message.id,
+          path: _message.path,
+          data: _message.data,
+          meta: _message.meta,
           namespace: options.namespace,
           timeStamp: Date.now()
         }
@@ -204,11 +249,11 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
                 const callbackId = uuid()
                 callbackIds.push(callbackId)
                 adapter.onMessage((message) => {
-                  if (isInvalidMessage(message)) return
+                  if (!checkMessage(message)) return
                   const _message = message as Message
                   if (_message.namespace !== options.namespace) return
-                  if (_message.sender !== 'provide') return
-                  if (_message.type !== 'callback') return
+                  if (_message.sender !== MESSAGE_SENDER.PROVIDE) return
+                  if (_message.type !== MESSAGE_TYPE.CALLBACK) return
                   if (_message.id !== callbackId) return
                   arg(..._message.data)
                 })
@@ -220,23 +265,24 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
 
             const messageId = uuid()
             const offMessage = await adapter.onMessage((message) => {
-              if (isInvalidMessage(message)) return
+              if (!checkMessage(message)) return
               const _message = message as Message
               if (_message.namespace !== options.namespace) return
-              if (_message.sender !== 'provide') return
-              if (_message.type !== 'apply') return
+              if (_message.sender !== MESSAGE_SENDER.PROVIDE) return
+              if (_message.type !== MESSAGE_TYPE.APPLY) return
               if (_message.id !== messageId) return
               _message.error ? reject(new Error(_message.error)) : resolve(_message.data)
               offMessage?.()
             })
 
             const applyMessage: Message = {
-              type: 'apply',
+              type: MESSAGE_TYPE.APPLY,
+              sender: MESSAGE_SENDER.INJECT,
               id: messageId,
               path,
-              sender: 'inject',
-              callbackIds,
               args: mapArgs,
+              meta: {},
+              callbackIds,
               timeStamp: Date.now(),
               namespace: options.namespace
             }
@@ -259,13 +305,13 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
 
 const provideProxy = <T extends Context>(context: T, options: Required<Options>) => {
   let target: ReturnType<T>
-  return <M extends Message = Message>(adapter: Adapter<M>, ...args: Parameters<T>) =>
+  return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>, ...args: Parameters<T>) =>
     (target ??= createProvide(context(...args) as ReturnType<T>, adapter as Adapter, options))
 }
 
 const injectProxy = <T extends Context>(context: T, options: Required<Options>) => {
   let target: ReturnType<T>
-  return <M extends Message = Message>(adapter: Adapter<M>) =>
+  return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>) =>
     (target ??= createInject<ReturnType<T>>(
       (options.backup ? Object.freeze(context()) : {}) as ReturnType<T>,
       adapter as Adapter,

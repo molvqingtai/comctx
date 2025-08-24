@@ -40,7 +40,7 @@ class Counter {
   }
 }
 
-export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+export const [provideCounter, injectCounter] = defineProxy(() => new Counter(10), {
   namespace: '__worker-transfer-example__',
   transfer: true // Use zero-copy transfer (transferable objects). If false, use structured clone
 })

@@ -217,12 +217,12 @@ export default class TransferAdapter implements Adapter {
 To adapt to different communication channels, implement the following interface:
 
 ```typescript
-interface Adapter<M extends Message = Message> {
+interface Adapter<T extends MessageMeta = MessageMeta> {
   /** Send a message to the other side */
   sendMessage: (message: M, transfer: Transferable[]) => MaybePromise<void>
 
   /** Register a message listener */
-  onMessage: (callback: (message?: Partial<M>) => void) => MaybePromise<OffMessage | void>
+  onMessage: (callback: (message?: Partial<Message<T>>) => void) => MaybePromise<OffMessage | void>
 }
 ```
 
@@ -325,16 +325,16 @@ see: [browser-extension-example](https://github.com/molvqingtai/comctx/tree/mast
 import browser from 'webextension-polyfill'
 import { Adapter, Message, SendMessage, OnMessage } from 'comctx'
 
-export interface MessageExtra extends Message {
+export interface MessageMeta {
   url: string
 }
 
-export default class InjectAdapter implements Adapter<MessageExtra> {
-  sendMessage: SendMessage<MessageExtra> = (message) => {
-    browser.runtime.sendMessage(browser.runtime.id, { ...message, url: document.location.href })
+export default class InjectAdapter implements Adapter<MessageMeta> {
+  sendMessage: SendMessage<MessageMeta> = (message) => {
+    browser.runtime.sendMessage(browser.runtime.id, { ...message, meta: { url: document.location.href } })
   }
-  onMessage: OnMessage<MessageExtra> = (callback) => {
-    const handler = (message: any): undefined => {
+  onMessage: OnMessage<MessageMeta> = (callback) => {
+    const handler = (message: Message<MessageMeta>): undefined => {
       callback(message)
     }
     browser.runtime.onMessage.addListener(handler)
@@ -349,18 +349,18 @@ export default class InjectAdapter implements Adapter<MessageExtra> {
 import browser from 'webextension-polyfill'
 import { Adapter, Message, SendMessage, OnMessage } from 'comctx'
 
-export interface MessageExtra extends Message {
+export interface MessageMeta {
   url: string
 }
 
-export default class ProvideAdapter implements Adapter<MessageExtra> {
-  sendMessage: SendMessage<MessageExtra> = async (message) => {
-    const tabs = await browser.tabs.query({ url: message.url })
+export default class ProvideAdapter implements Adapter<MessageMeta> {
+  sendMessage: SendMessage<MessageMeta> = async (message) => {
+    const tabs = await browser.tabs.query({ url: message.meta.url })
     tabs.map((tab) => browser.tabs.sendMessage(tab.id!, message))
   }
 
-  onMessage: OnMessage<MessageExtra> = (callback) => {
-    const handler = (message: any): undefined => {
+  onMessage: OnMessage<MessageMeta> = (callback) => {
+    const handler = (message: Message<MessageMeta>): undefined => {
       callback(message)
     }
     browser.runtime.onMessage.addListener(handler)

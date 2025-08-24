@@ -5,7 +5,9 @@ export default class InjectAdapter implements Adapter {
     window.postMessage(message, '*')
   }
   onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
+    const handler = (event: MessageEvent) => {
+      callback(event.data)
+    }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
   }
