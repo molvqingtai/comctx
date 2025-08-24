@@ -1,16 +1,16 @@
 import { browser } from '#imports'
 import { Adapter, Message, SendMessage, OnMessage } from 'comctx'
 
-export interface MessageExtra extends Message {
+export interface MessageMeta {
   url: string
 }
 
-export default class InjectAdapter implements Adapter<MessageExtra> {
-  sendMessage: SendMessage<MessageExtra> = (message) => {
-    browser.runtime.sendMessage(browser.runtime.id, { ...message, url: document.location.href })
+export default class InjectAdapter implements Adapter<MessageMeta> {
+  sendMessage: SendMessage<MessageMeta> = (message) => {
+    browser.runtime.sendMessage(browser.runtime.id, { ...message, meta: { url: document.location.href } })
   }
-  onMessage: OnMessage<MessageExtra> = (callback) => {
-    const handler = (message: any): undefined => {
+  onMessage: OnMessage<MessageMeta> = (callback) => {
+    const handler = (message: Message<MessageMeta>): undefined => {
       callback(message)
     }
     browser.runtime.onMessage.addListener(handler)

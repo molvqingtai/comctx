@@ -15,8 +15,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "comctx": "workspace:*",
-    "opfs-tools": "^0.7.2"
+    "comctx": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",

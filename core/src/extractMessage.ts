@@ -26,34 +26,12 @@ const extractMessage = <T>(originalMessage: T): { message: T; transfer: Transfer
       isInstanceOf(value, globalThis.RTCDataChannel) ||
       isInstanceOf(value, globalThis.MediaSourceHandle) ||
       isInstanceOf(value, globalThis.MIDIAccess) ||
-      isInstanceOf(value, globalThis.MediaStreamTrack)
+      isInstanceOf(value, globalThis.MediaStreamTrack) ||
+      isInstanceOf(value, globalThis.ReadableStream) ||
+      isInstanceOf(value, globalThis.WritableStream) ||
+      isInstanceOf(value, globalThis.TransformStream)
     ) {
       return { cleanedValue: value, transferables: [value as Transferable] }
-    }
-
-    // Special handling for streams - only transfer if not locked
-    if (isInstanceOf(value, globalThis.ReadableStream)) {
-      const stream = value as ReadableStream
-      if (!stream.locked) {
-        return { cleanedValue: value, transferables: [stream] }
-      }
-      return { cleanedValue: undefined, transferables: [] }
-    }
-
-    if (isInstanceOf(value, globalThis.WritableStream)) {
-      const stream = value as WritableStream
-      if (!stream.locked) {
-        return { cleanedValue: value, transferables: [stream] }
-      }
-      return { cleanedValue: undefined, transferables: [] }
-    }
-
-    if (isInstanceOf(value, globalThis.TransformStream)) {
-      const stream = value as TransformStream
-      if (!stream.readable.locked && !stream.writable.locked) {
-        return { cleanedValue: value, transferables: [stream] }
-      }
-      return { cleanedValue: undefined, transferables: [] }
     }
 
     // Handle arrays
