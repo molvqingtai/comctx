@@ -219,7 +219,7 @@ To adapt to different communication channels, implement the following interface:
 ```typescript
 interface Adapter<T extends MessageMeta = MessageMeta> {
   /** Send a message to the other side */
-  sendMessage: (message: M, transfer: Transferable[]) => MaybePromise<void>
+  sendMessage: (message: Message<T>, transfer: Transferable[]) => MaybePromise<void>
 
   /** Register a message listener */
   onMessage: (callback: (message?: Partial<Message<T>>) => void) => MaybePromise<OffMessage | void>
