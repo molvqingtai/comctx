@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/molvqingtai/comctx/compare/v1.3.0...v1.4.0) (2025-08-24)
+
+
+### Features
+
+* added messageMeta and stricter message protocol ([2da7d8e](https://github.com/molvqingtai/comctx/commit/2da7d8ecf5dd42dacaa64f735b0ce8ed7bdcb7f4))
+
 # [1.3.0](https://github.com/molvqingtai/comctx/compare/v1.2.0...v1.3.0) (2025-07-23)
 
 
