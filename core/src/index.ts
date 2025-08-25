@@ -2,6 +2,8 @@ import uuid from '@/utils/uuid'
 import setIntervalImmediate from '@/utils/setIntervalImmediate'
 import extractMessage from './extractMessage'
 
+const PROXY_MARKER = Symbol('PROXY_MARKER')
+
 export const MESSAGE_TYPE = {
   APPLY: 'apply',
   CALLBACK: 'callback',
@@ -235,10 +237,15 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
 const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter, options: Required<Options>) => {
   const createProxy = (target: T, path: string[]) => {
     const proxy = new Proxy<T>(target, {
-      get(_target, key: string) {
-        return createProxy((() => {}) as unknown as T, [...path, key] as string[])
+      get(_target, key, receiver) {
+        if (_target[PROXY_MARKER as keyof typeof _target]) {
+          return Reflect.get(_target, key, receiver)
+        }
+        const noop = () => {}
+        noop[PROXY_MARKER] = true
+        return createProxy(noop as unknown as T, [...path, key] as string[])
       },
-      apply(_target, _thisArg, args) {
+      apply(_target, _this, args) {
         return new Promise<Message>(async (resolve, reject) => {
           try {
             options.heartbeatCheck && (await heartbeatCheck(adapter, options))
@@ -298,8 +305,10 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
         })
       }
     })
+
     return proxy
   }
+
   return createProxy(source, [])
 }
 

@@ -22,7 +22,7 @@ body {
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 2.5em;
   line-height: 1.1;
 }
 
@@ -35,8 +35,20 @@ p {
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  position: fixed;
+  width: 40vw;
+  background: #fff;
+  z-index: 9999;
 }
 
+.inject-app {
+  right: 50vw;
+  border-right: 1px solid #eee;
+}
+
+.content-app {
+  left: 50vw;
+}
 .card {
   display: flex;
   justify-content: center;

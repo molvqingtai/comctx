@@ -1,34 +1,51 @@
-import { defineContentScript } from '#imports'
-
-import { injectCounter } from '@/shared'
-import { createShadowRootUi } from '#imports'
-import { name, description } from '@/../package.json'
+import { name } from '@/../package.json'
+import { createShadowRootUi, defineContentScript } from '#imports'
 import createElement from '@/utils/createElement'
-
-import InjectAdapter from './InjectAdapter'
-
 import './style.css'
+
+import defineProxy from 'comctx'
+import { InjectAdapter as BrowserRuntimeInjectAdapter } from '@/service/adapter/browserRuntime'
+import { ProvideAdapter as CustomEventProvideAdapter } from '@/service/adapter/customEvent'
+import type { Counter } from '@/service/counter'
 
 export default defineContentScript({
   matches: ['*://*.example.com/*'],
   runAt: 'document_end',
   cssInjectionMode: 'ui',
   async main(ctx) {
-    const counter = injectCounter(new InjectAdapter())
+    const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
+      namespace: '__comctx-example__'
+    })
+
+    const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter())
+
+    const [provideContentCounter] = defineProxy(
+      () => ({
+        getValue: () => counter.getValue(),
+        increment: () => counter.increment(),
+        decrement: () => counter.decrement(),
+        onChange: (callback: (value: number) => void) => counter.onChange(callback)
+      }),
+      {
+        namespace: '__comctx-example__'
+      }
+    )
+
+    provideContentCounter(new CustomEventProvideAdapter())
 
     const ui = await createShadowRootUi(ctx, {
       name,
       position: 'inline',
       anchor: 'body',
-      append: 'replace',
+      append: 'last',
       mode: 'open',
       onMount: async (container) => {
         const initValue = await counter.getValue()
 
         const app = createElement(`     
-          <div id="app">
+          <div id="app" class="content-app">
             <h1>${name}</h1>
-            <p>${description}</p>
+            <p>content-script -> background</p>
             <div class="card">
               <button id="decrement" type="button">-</button>
                 <div id="value">${initValue}</div>
