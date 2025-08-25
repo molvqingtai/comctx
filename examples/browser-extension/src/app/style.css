@@ -37,13 +37,12 @@ p {
   text-align: center;
   position: fixed;
   width: 40vw;
-  background: #fff;
   z-index: 9999;
 }
 
 .inject-app {
   right: 50vw;
-  border-right: 1px solid #eee;
+  border-right: 1px solid #ccc;
 }
 
 .content-app {
