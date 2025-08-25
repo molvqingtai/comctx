@@ -13,7 +13,7 @@ export default defineContentScript({
   runAt: 'document_end',
   cssInjectionMode: 'ui',
   async main(ctx) {
-    const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
+    const [, injectBackgroundCounter] = defineProxy(() => ({} as Counter), {
       namespace: '__comctx-example__'
     })
 
@@ -39,6 +39,7 @@ export default defineContentScript({
       anchor: 'body',
       append: 'last',
       mode: 'open',
+      inheritStyles: true,
       onMount: async (container) => {
         const initValue = await counter.getValue()
 
