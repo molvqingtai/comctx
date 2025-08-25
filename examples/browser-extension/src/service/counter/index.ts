@@ -1,9 +1,8 @@
-import { defineProxy } from 'comctx'
-import { browser } from '#imports'
-
-// Proxy object that will run in the background script
-class Counter {
-  public value = 0
+export class Counter {
+  public value: number
+  constructor(initialValue: number = 0) {
+    this.value = initialValue
+  }
   async getValue() {
     return this.value
   }
@@ -24,7 +23,3 @@ class Counter {
     return --this.value
   }
 }
-
-export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
-  namespace: browser.runtime.id
-})
