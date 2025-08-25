@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/molvqingtai/comctx/compare/v1.4.0...v1.4.1) (2025-08-25)
+
+
+### Bug Fixes
+
+* unexpanded nested proxy does not work close[#47](https://github.com/molvqingtai/comctx/issues/47) ([dd5de25](https://github.com/molvqingtai/comctx/commit/dd5de25c62aa5141bc17a8199ca8bcf133df48df))
+
 # [1.4.0](https://github.com/molvqingtai/comctx/compare/v1.3.0...v1.4.0) (2025-08-24)
 
 
