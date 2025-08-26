@@ -13,7 +13,7 @@ export class ProvideAdapter implements Adapter<MessageMeta> {
   }
 
   onMessage: OnMessage<MessageMeta> = (callback) => {
-    const handler = (message: Message<MessageMeta>): undefined => {
+    const handler = (message?: Partial<Message<MessageMeta>>): undefined => {
       // console.log('RuntimeProvideAdapter onMessage', message)
       callback(message)
     }
@@ -28,7 +28,7 @@ export class InjectAdapter implements Adapter<MessageMeta> {
     browser.runtime.sendMessage(browser.runtime.id, { ...message, meta: { url: document.location.href } })
   }
   onMessage: OnMessage<MessageMeta> = (callback) => {
-    const handler = (message: any): undefined => {
+    const handler = (message?: Partial<Message<MessageMeta>>): undefined => {
       // console.log('RuntimeInjectAdapter onMessage', message)
       callback(message)
     }

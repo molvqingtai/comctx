@@ -1,4 +1,4 @@
-import { Adapter, SendMessage, OnMessage, Message } from 'comctx'
+import { Adapter, SendMessage, OnMessage } from 'comctx'
 
 declare const self: SharedWorkerGlobalScope
 
@@ -10,7 +10,7 @@ export default class ProvideAdapter implements Adapter {
   }
 
   onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent<Message>) => callback(event.data)
+    const handler = (event: MessageEvent) => callback(event.data)
 
     self.addEventListener('connect', (event: MessageEvent) => {
       const [port] = event.ports

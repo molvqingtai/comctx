@@ -1,4 +1,4 @@
-import { Adapter, SendMessage, OnMessage, Message } from 'comctx'
+import { Adapter, SendMessage, OnMessage } from 'comctx'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -7,7 +7,7 @@ export default class ProvideAdapter implements Adapter {
     self.postMessage(message)
   }
   onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent<Message>) => callback(event.data)
+    const handler = (event: MessageEvent) => callback(event.data)
     self.addEventListener('message', handler)
     return () => self.removeEventListener('message', handler)
   }

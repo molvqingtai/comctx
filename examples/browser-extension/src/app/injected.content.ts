@@ -16,7 +16,7 @@ export default defineContentScript({
     document.head.querySelectorAll('style').forEach((style) => style.remove())
     document.body.querySelector('div')?.remove()
 
-    const [, injectContentCounter] = defineProxy(() => ({} as Counter), {
+    const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
       namespace: '__comctx-example__'
     })
 
