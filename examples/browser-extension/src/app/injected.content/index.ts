@@ -1,10 +1,9 @@
 import { defineContentScript } from '#imports'
 
 import createElement from '@/utils/createElement'
-
 import { InjectAdapter as CustomEventInjectAdapter } from '@/service/adapter/customEvent'
+import '@/assets/style.css'
 
-import './style.css'
 import defineProxy from 'comctx'
 import type { Counter } from '@/service/counter'
 
@@ -25,18 +24,18 @@ export default defineContentScript({
     const initValue = await counter.getValue()
 
     const app = createElement(`
-            <div id="app" class="inject-app">
-              <h1>injected-script example</h1>
-              <p>injected-script -> content-script -> background</p>
-              <div class="card">
-                <button id="decrement" type="button">-</button>
-                  <div id="value">${initValue}</div>
-                <button id="increment" type="button">+</button>
-              </div>
-              <div class="card">
-                <h4 id="background-value">Background Value: ${initValue} </h4>
-              </div>
-            </div>`)
+      <div id="app" class="injected-app">
+        <h1>injected-script example</h1>
+        <p>injected-script -> content-script -> background</p>
+        <div class="card">
+          <button id="decrement" type="button">-</button>
+            <div id="value">${initValue}</div>
+          <button id="increment" type="button">+</button>
+        </div>
+        <div class="card">
+          <h4 id="background-value">Background Value: ${initValue} </h4>
+        </div>
+      </div>`)
 
     app.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
       await counter.decrement()
@@ -45,7 +44,7 @@ export default defineContentScript({
       await counter.increment()
     })
     counter.onChange((value) => {
-      console.log('injected value:', value)
+      console.log('injected-script:', value)
       app.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
       app.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
     })

@@ -1,6 +1,6 @@
 {
   "name": "browser-extension-example",
-  "description": "This is an example of communication between the content-script page and an background.",
+  "description": "This is an example of communication between the content-script page and popup page and background.",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

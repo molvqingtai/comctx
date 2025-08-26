@@ -16,9 +16,8 @@
 body {
   margin: 0;
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
 }
 
 h1 {
@@ -31,23 +30,35 @@ p {
 }
 
 #app {
-  max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  position: fixed;
-  width: 40vw;
-  z-index: 9999;
 }
 
-.inject-app {
+.injected-app {
+  width: 40vw;
   right: 50vw;
-  border-right: 1px solid #ccc;
+  position: fixed;
+  border-right: 1px solid #eee;
+  z-index: 9999;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .content-app {
+  width: 40vw;
   left: 50vw;
+  position: fixed;
+  z-index: 9999;
+  top: 50%;
+  transform: translateY(-50%);
 }
+
+.popup-app {
+  width: 350px;
+  right: 350px;
+}
+
 .card {
   display: flex;
   justify-content: center;
