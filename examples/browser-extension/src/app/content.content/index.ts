@@ -1,7 +1,7 @@
 import { name } from '@/../package.json'
-import { createShadowRootUi, defineContentScript } from '#imports'
+import { browser, createShadowRootUi, defineContentScript } from '#imports'
 import createElement from '@/utils/createElement'
-import './style.css'
+import '@/assets/style.css'
 
 import defineProxy from 'comctx'
 import { InjectAdapter as BrowserRuntimeInjectAdapter } from '@/service/adapter/browserRuntime'
@@ -15,7 +15,7 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
   async main(ctx) {
     const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
-      namespace: '__comctx-example__'
+      namespace: browser.runtime.id
     })
 
     const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter())
@@ -60,7 +60,7 @@ export default defineContentScript({
         })
 
         counter.onChange((value) => {
-          console.log('content value:', value)
+          console.log('content-script:', value)
           app.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
           app.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
         })
