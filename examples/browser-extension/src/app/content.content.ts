@@ -9,6 +9,7 @@ import { ProvideAdapter as CustomEventProvideAdapter } from '@/service/adapter/c
 import type { Counter } from '@/service/counter'
 
 export default defineContentScript({
+  world: 'ISOLATED',
   matches: ['*://*.example.com/*'],
   runAt: 'document_end',
   cssInjectionMode: 'ui',
@@ -19,17 +20,10 @@ export default defineContentScript({
 
     const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter())
 
-    const [provideContentCounter] = defineProxy(
-      () => ({
-        getValue: () => counter.getValue(),
-        increment: () => counter.increment(),
-        decrement: () => counter.decrement(),
-        onChange: (callback: (value: number) => void) => counter.onChange(callback)
-      }),
-      {
-        namespace: '__comctx-example__'
-      }
-    )
+    // The bridge exposed to injected-script
+    const [provideContentCounter] = defineProxy(() => counter, {
+      namespace: '__comctx-example__'
+    })
 
     provideContentCounter(new CustomEventProvideAdapter())
 
@@ -45,7 +39,7 @@ export default defineContentScript({
 
         const app = createElement(`     
           <div id="app" class="content-app">
-            <h1>${name}</h1>
+            <h1>content-script example</h1>
             <p>content-script -> background</p>
             <div class="card">
               <button id="decrement" type="button">-</button>
@@ -66,6 +60,7 @@ export default defineContentScript({
         })
 
         counter.onChange((value) => {
+          console.log('content value:', value)
           app.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
           app.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
         })
