@@ -1,6 +1,5 @@
 import { defineContentScript } from '#imports'
 
-import { name } from '@/../package.json'
 import createElement from '@/utils/createElement'
 
 import { InjectAdapter as CustomEventInjectAdapter } from '@/service/adapter/customEvent'
@@ -17,7 +16,7 @@ export default defineContentScript({
     document.head.querySelectorAll('style').forEach((style) => style.remove())
     document.body.querySelector('div')?.remove()
 
-    const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
+    const [, injectContentCounter] = defineProxy(() => ({} as Counter), {
       namespace: '__comctx-example__'
     })
 
@@ -27,8 +26,8 @@ export default defineContentScript({
 
     const app = createElement(`
             <div id="app" class="inject-app">
-              <h1>${name}</h1>
-              <p>inject-script -> content-script -> background</p>
+              <h1>injected-script example</h1>
+              <p>injected-script -> content-script -> background</p>
               <div class="card">
                 <button id="decrement" type="button">-</button>
                   <div id="value">${initValue}</div>
@@ -46,6 +45,7 @@ export default defineContentScript({
       await counter.increment()
     })
     counter.onChange((value) => {
+      console.log('injected value:', value)
       app.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
       app.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
     })

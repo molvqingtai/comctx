@@ -12,11 +12,11 @@ export default defineBackground({
       console.log('background active')
     })
 
-    const [provideCounter] = defineProxy((initialValue: number = 0) => new Counter(initialValue), {
+    const [provideBackgroundCounter] = defineProxy((initialValue: number = 0) => new Counter(initialValue), {
       namespace: '__comctx-example__'
     })
 
-    const counter = provideCounter(new ProvideAdapter())
+    const counter = provideBackgroundCounter(new ProvideAdapter())
 
     counter.onChange((value) => {
       console.log('Background Value:', value)
