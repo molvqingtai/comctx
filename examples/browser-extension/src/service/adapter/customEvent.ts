@@ -13,7 +13,7 @@ export class ProvideAdapter implements Adapter {
   }
   onMessage: OnMessage = (callback) => {
     const handler = (event: Event) => {
-      callback((event as CustomEvent<Message>).detail)
+      callback((event as CustomEvent<Partial<Message> | undefined>).detail)
       // console.log('EventProvideAdapter SendMessage', event.detail)
     }
     document.addEventListener('message', handler)

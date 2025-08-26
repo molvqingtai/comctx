@@ -1,4 +1,4 @@
-import { Adapter, SendMessage, OnMessage, Message } from 'comctx'
+import { Adapter, SendMessage, OnMessage } from 'comctx'
 
 export default class InjectAdapter implements Adapter {
   worker: Worker
@@ -13,7 +13,7 @@ export default class InjectAdapter implements Adapter {
   }
 
   onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent<Message>) => {
+    const handler = (event: MessageEvent) => {
       callback(event.data)
     }
     this.worker.addEventListener('message', handler)

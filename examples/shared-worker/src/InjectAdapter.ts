@@ -1,4 +1,4 @@
-import { Adapter, SendMessage, OnMessage, Message } from 'comctx'
+import { Adapter, SendMessage, OnMessage } from 'comctx'
 
 export default class InjectAdapter implements Adapter {
   worker: SharedWorker
@@ -10,7 +10,7 @@ export default class InjectAdapter implements Adapter {
     this.worker.port.postMessage(message)
   }
   onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent<Message>) => callback(event.data)
+    const handler = (event: MessageEvent) => callback(event.data)
     this.worker.port.addEventListener('message', handler)
     return () => {
       this.worker.port.removeEventListener('message', handler)

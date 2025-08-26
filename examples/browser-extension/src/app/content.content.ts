@@ -14,7 +14,7 @@ export default defineContentScript({
   runAt: 'document_end',
   cssInjectionMode: 'ui',
   async main(ctx) {
-    const [, injectBackgroundCounter] = defineProxy(() => ({} as Counter), {
+    const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
       namespace: '__comctx-example__'
     })
 
