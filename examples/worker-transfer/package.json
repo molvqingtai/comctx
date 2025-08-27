@@ -1,7 +1,7 @@
 {
   "name": "worker-transfer-example",
   "version": "1.0.0",
-  "description": "Web Worker Transfer Objects Example - Automatic transferable objects handling",
+  "description": "This is an example of a transferable object based on web worker.",
   "type": "module",
   "scripts": {
     "dev": "vite",
