@@ -1,6 +1,6 @@
 # Comctx
 
-Cross-context RPC solution with type safety and flexible adapters.
+In any JavaScript environment, use RPC for easy cross-context communication.
 
 [![version](https://img.shields.io/github/v/release/molvqingtai/comctx)](https://www.npmjs.com/package/comctx) [![workflow](https://github.com/molvqingtai/comctx/actions/workflows/ci.yml/badge.svg)](https://github.com/molvqingtai/comctx/actions) [![download](https://img.shields.io/npm/dt/comctx)](https://www.npmjs.com/package/comctx) [![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/comctx)](https://www.npmjs.com/package/comctx) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/molvqingtai/comctx)
 
