@@ -10,7 +10,7 @@ $ pnpm install comctx
 
 ## ✨Introduction
 
-[Comctx](https://github.com/molvqingtai/comctx) aims to solve the communication problem between different contexts in a JavaScript environment. [Comctx](https://github.com/molvqingtai/comctx) has a similar goal to [Comlink](https://github.com/GoogleChromeLabs/comlink), but it's not reinventing the wheel, as [Comlink](https://github.com/GoogleChromeLabs/comlink) relies on MessagePort, which is limited in some environments ([Issues: 438](https://github.com/GoogleChromeLabs/comlink/issues/438)).
+[Comctx](https://github.com/molvqingtai/comctx) aims to solve the communication problem between different contexts in a JavaScript environment. [Comctx](https://github.com/molvqingtai/comctx) has a similar goal to [Comlink](https://github.com/GoogleChromeLabs/comlink), but it's not reinventing the wheel, as [Comlink](https://github.com/GoogleChromeLabs/comlink) relies on [MessagePort](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort), which is limited in some environments ([Issues: 438](https://github.com/GoogleChromeLabs/comlink/issues/438)).
 
 [Comctx](https://github.com/molvqingtai/comctx) enables flexible adaptation to different environments, such as: Web Workers, Browser Extensions, iframes, Electron, etc., making cross-context communication never easier.
 
