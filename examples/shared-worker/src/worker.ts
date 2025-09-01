@@ -1,5 +1,5 @@
-import { provideCounter } from '../shared'
-import ProvideAdapter from './ProvideAdapter'
+import { ProvideAdapter } from './service/adapter'
+import { provideCounter } from './service/counter'
 
 const counter = provideCounter(new ProvideAdapter())
 

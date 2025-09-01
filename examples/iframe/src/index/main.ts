@@ -1,12 +1,18 @@
-import { injectCounter } from '../shared'
 import { name, description } from '../../package.json'
 
 import './style.css'
 
-import InjectAdapter from './InjectAdapter'
 import createElement from '../utils/createElement'
 
+import defineProxy from 'comctx'
+import { InjectAdapter } from '../service/adapter'
+import type Counter from '../service/counter'
+
 void (async () => {
+  const [, injectCounter] = defineProxy(() => ({}) as Counter, {
+    namespace: '__iframe-example__'
+  })
+
   // Use the proxy object
   const counter = injectCounter(new InjectAdapter())
 

@@ -1,8 +1,10 @@
-import { defineProxy } from 'comctx'
+import defineProxy from 'comctx'
 
-// Proxy object that will run in the iframe
-class Counter {
-  public value = 0
+export class Counter {
+  private value: number
+  constructor(initialValue: number = 0) {
+    this.value = initialValue
+  }
   async getValue() {
     return this.value
   }
@@ -24,6 +26,6 @@ class Counter {
   }
 }
 
-export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
-  namespace: '__iframe-example__'
+export const [provideCounter, injectCounter] = defineProxy((initialValue: number = 0) => new Counter(initialValue), {
+  namespace: '__web-worker-example__'
 })

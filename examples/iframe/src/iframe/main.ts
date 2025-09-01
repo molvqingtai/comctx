@@ -1,10 +1,14 @@
-import { provideCounter } from '../shared'
 import './style.css'
-
-import ProvideAdapter from './ProvideAdapter'
+import defineProxy from 'comctx'
+import Counter from '../service/counter'
+import ProvideAdapter from '../service/adapter'
 
 // Register the proxy object
 void (async () => {
+  const [provideCounter] = defineProxy(() => new Counter(), {
+    namespace: '__iframe-example__'
+  })
+
   const counter = provideCounter(new ProvideAdapter())
 
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
