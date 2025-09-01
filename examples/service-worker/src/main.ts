@@ -1,10 +1,11 @@
-import { injectCounter } from './shared'
 import { name, description } from '../package.json'
 
 import './style.css'
 
-import InjectAdapter from './InjectAdapter'
 import createElement from './utils/createElement'
+
+import { InjectAdapter } from './service/adapter'
+import { injectCounter } from './service/counter'
 
 void (async () => {
   // Use the proxy object

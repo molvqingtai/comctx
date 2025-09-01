@@ -1,7 +1,4 @@
-import { defineProxy } from 'comctx'
-
-// Proxy object that will run in the Service Worker
-class Counter {
+export default class Counter {
   public value = 0
   async getValue() {
     return this.value
@@ -23,7 +20,3 @@ class Counter {
     return --this.value
   }
 }
-
-export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
-  namespace: '__shared-worker-example__'
-})

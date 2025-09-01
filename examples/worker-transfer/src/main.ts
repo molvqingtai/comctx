@@ -1,14 +1,15 @@
-import { injectCounter } from './shared'
 import { name, description } from '../package.json'
 
 import './style.css'
 
-import InjectAdapter from './InjectAdapter'
 import createElement from './utils/createElement'
+
+import { InjectAdapter } from './service/adapter'
+import { injectCounter } from './service/counter'
 
 void (async () => {
   // Use the proxy object
-  const counter = injectCounter(new InjectAdapter(new URL('./worker/index.ts', import.meta.url)))
+  const counter = injectCounter(new InjectAdapter(new URL('./worker.ts', import.meta.url)))
 
   const initBuffer = await counter.getValue()
   const initValue = new Int32Array(initBuffer)[0]
