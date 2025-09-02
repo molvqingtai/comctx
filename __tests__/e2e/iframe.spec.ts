@@ -27,8 +27,8 @@ describe('iframe test', async () => {
 
     await waitFor(
       async () => {
-        const valueRef = getByTestId(main, 'value')
-        expect(valueRef.textContent).toBe('1')
+        const mainValueRef = getByTestId(main, 'value')
+        expect(mainValueRef.textContent).toBe('1')
         const iframeValueRef = getByTestId(iframe, 'value')
         expect(iframeValueRef.textContent).toBe('1')
       },
@@ -46,8 +46,8 @@ describe('iframe test', async () => {
 
     await waitFor(
       async () => {
-        const valueRef = getByTestId(main, 'value')
-        expect(valueRef.textContent).toBe('-1')
+        const mainValueRef = getByTestId(main, 'value')
+        expect(mainValueRef.textContent).toBe('-1')
         const iframeValueRef = getByTestId(iframe, 'value')
         expect(iframeValueRef.textContent).toBe('-1')
       },
