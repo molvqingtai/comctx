@@ -1,6 +1,6 @@
 import uuid from '@/utils/uuid'
 import setIntervalImmediate from '@/utils/setIntervalImmediate'
-import extractMessage from './extractMessage'
+import extractTransfer from '@/utils/extractTransfer'
 
 const PROXY_MARKER = Symbol('PROXY_MARKER')
 
@@ -123,12 +123,7 @@ const heartbeatCheck = async (adapter: Adapter, options: Required<Options>) => {
           namespace: options.namespace,
           timeStamp: Date.now()
         }
-        if (options.transfer) {
-          const { message, transfer } = extractMessage(pingMessage)
-          adapter.sendMessage(message, transfer)
-        } else {
-          adapter.sendMessage(pingMessage, [])
-        }
+        adapter.sendMessage(pingMessage, options.transfer ? extractTransfer(pingMessage) : [])
       } catch (error) {
         reject(error)
       }
@@ -169,12 +164,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
           namespace: options.namespace,
           timeStamp: Date.now()
         }
-        if (options.transfer) {
-          const { message, transfer } = extractMessage(pongMessage)
-          adapter.sendMessage(message, transfer)
-        } else {
-          adapter.sendMessage(pongMessage, [])
-        }
+        adapter.sendMessage(pongMessage, options.transfer ? extractTransfer(pongMessage) : [])
         break
       }
       case MESSAGE_TYPE.APPLY: {
@@ -192,12 +182,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
                   namespace: options.namespace,
                   timeStamp: Date.now()
                 }
-                if (options.transfer) {
-                  const { message, transfer } = extractMessage(callbackMessage)
-                  adapter.sendMessage(message, transfer)
-                } else {
-                  adapter.sendMessage(callbackMessage, [])
-                }
+                adapter.sendMessage(callbackMessage, options.transfer ? extractTransfer(callbackMessage) : [])
               }
             } else {
               return arg
@@ -221,12 +206,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
           namespace: options.namespace,
           timeStamp: Date.now()
         }
-        if (options.transfer) {
-          const { message, transfer } = extractMessage(responseMessage)
-          adapter.sendMessage(message, transfer)
-        } else {
-          adapter.sendMessage(responseMessage, [])
-        }
+        adapter.sendMessage(responseMessage, options.transfer ? extractTransfer(responseMessage) : [])
         break
       }
     }
@@ -293,12 +273,7 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
               timeStamp: Date.now(),
               namespace: options.namespace
             }
-            if (options.transfer) {
-              const { message, transfer } = extractMessage(applyMessage)
-              adapter.sendMessage(message, transfer)
-            } else {
-              adapter.sendMessage(applyMessage, [])
-            }
+            adapter.sendMessage(applyMessage, options.transfer ? extractTransfer(applyMessage) : [])
           } catch (error) {
             reject(error)
           }
