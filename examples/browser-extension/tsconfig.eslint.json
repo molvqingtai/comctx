@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": ["src", "types", "eslint.config.ts", "wxt.config.ts"]
+}

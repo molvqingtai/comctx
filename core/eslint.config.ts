@@ -5,7 +5,12 @@ import prettierPlugin from 'eslint-plugin-prettier/recommended'
 
 export default [
   { files: ['**/*.{js,mjs,cjs,ts}'] },
-  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
+  {
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+      parserOptions: { project: './tsconfig.node.json', tsconfigRootDir: import.meta.dirname }
+    }
+  },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   prettierPlugin,
