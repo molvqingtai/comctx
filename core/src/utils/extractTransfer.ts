@@ -1,4 +1,4 @@
-import isInstanceOf from '@/utils/isInstanceOf'
+import safeInstanceOf from '@/utils/safeInstanceOf'
 
 // Helper function to extract transferable objects
 const extractTransfer = <T>(target: T): Transferable[] => {
@@ -18,19 +18,19 @@ const extractTransfer = <T>(target: T): Transferable[] => {
 
     // Check for basic transferable objects
     if (
-      isInstanceOf(value, globalThis.ArrayBuffer) ||
-      isInstanceOf(value, globalThis.MessagePort) ||
-      isInstanceOf(value, globalThis.ImageBitmap) ||
-      isInstanceOf(value, globalThis.OffscreenCanvas) ||
-      isInstanceOf(value, globalThis.AudioData) ||
-      isInstanceOf(value, globalThis.VideoFrame) ||
-      isInstanceOf(value, globalThis.RTCDataChannel) ||
-      isInstanceOf(value, globalThis.MediaSourceHandle) ||
-      isInstanceOf(value, globalThis.MIDIAccess) ||
-      isInstanceOf(value, globalThis.MediaStreamTrack) ||
-      isInstanceOf(value, globalThis.ReadableStream) ||
-      isInstanceOf(value, globalThis.WritableStream) ||
-      isInstanceOf(value, globalThis.TransformStream)
+      safeInstanceOf(value, globalThis.ArrayBuffer) ||
+      safeInstanceOf(value, globalThis.MessagePort) ||
+      safeInstanceOf(value, globalThis.ImageBitmap) ||
+      safeInstanceOf(value, globalThis.OffscreenCanvas) ||
+      safeInstanceOf(value, globalThis.AudioData) ||
+      safeInstanceOf(value, globalThis.VideoFrame) ||
+      safeInstanceOf(value, globalThis.RTCDataChannel) ||
+      safeInstanceOf(value, globalThis.MediaSourceHandle) ||
+      safeInstanceOf(value, globalThis.MIDIAccess) ||
+      safeInstanceOf(value, globalThis.MediaStreamTrack) ||
+      safeInstanceOf(value, globalThis.ReadableStream) ||
+      safeInstanceOf(value, globalThis.WritableStream) ||
+      safeInstanceOf(value, globalThis.TransformStream)
     ) {
       return [value]
     }
