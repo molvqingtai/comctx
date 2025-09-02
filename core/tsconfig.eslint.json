@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.app.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "rootDir": "."
-  },
-  "include": ["src", "eslint.config.ts"]
-}

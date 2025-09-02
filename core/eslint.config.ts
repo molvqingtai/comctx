@@ -1,14 +1,15 @@
 import globals from 'globals'
 import pluginJs from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 import prettierPlugin from 'eslint-plugin-prettier/recommended'
 
-export default [
+export default defineConfig([
   { files: ['**/*.{js,mjs,cjs,ts}'] },
   {
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
-      parserOptions: { project: './tsconfig.node.json', tsconfigRootDir: import.meta.dirname }
+      parserOptions: { project: './tsconfig.json', tsconfigRootDir: import.meta.dirname }
     }
   },
   pluginJs.configs.recommended,
@@ -24,4 +25,4 @@ export default [
       'no-async-promise-executor': 'off'
     }
   }
-]
+])
