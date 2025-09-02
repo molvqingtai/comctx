@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/molvqingtai/comctx/compare/v1.4.1...v1.4.2) (2025-09-02)
+
+
+### Performance Improvements
+
+* optimize file structure & delete default export ([78164f7](https://github.com/molvqingtai/comctx/commit/78164f750baa84202745d2dbdc07ea88ef2da359))
+
 ## [1.4.1](https://github.com/molvqingtai/comctx/compare/v1.4.0...v1.4.1) (2025-08-25)
 
 
