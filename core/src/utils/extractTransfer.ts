@@ -4,7 +4,7 @@ import isInstanceOf from '@/utils/isInstanceOf'
 const extractTransfer = <T>(target: T): Transferable[] => {
   const visited = new WeakSet()
 
-  const traverse = (value: unknown): Transferable[] => {
+  const extract = (value: unknown): Transferable[] => {
     if (!value || typeof value !== 'object') {
       return []
     }
@@ -37,14 +37,14 @@ const extractTransfer = <T>(target: T): Transferable[] => {
 
     // Handle arrays
     if (Array.isArray(value)) {
-      return value.flatMap(traverse)
+      return value.flatMap(extract)
     }
 
     // Handle objects - recursively extract transferables from properties
-    return Object.values(value).flatMap(traverse)
+    return Object.values(value).flatMap(extract)
   }
 
-  return traverse(target)
+  return extract(target)
 }
 
 export default extractTransfer
