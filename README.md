@@ -179,7 +179,7 @@ If you want a value to be transferred rather than copied — provided the value 
 class Counter {
   public value = new ArrayBuffer(4)
 
-  async transfer() {
+  async getValue() {
     return this.value // Zero-copy transfer, this.value becomes detached
   }
 
@@ -196,11 +196,11 @@ export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), 
 
 // Usage - receive transferred ArrayBuffer
 const counter = injectCounter(adapter)
-const value = await counter.transfer() // ✅ Return: zero-copy ArrayBuffer
+const value = await counter.getValue() // ✅ Return: zero-copy ArrayBuffer
 new Int32Array(value)[0]++ // ✅ Modify transferred ArrayBuffer directly
 
 await counter.increment() // ❌ Error: Cannot perform Construct on a detached ArrayBuffer
-await counter.transfer() // ❌ Error: Failed to execute 'postMessage' on 'DedicatedWorkerGlobalScope': ArrayBuffer at index 0 is already detached.
+await counter.getValue() // ❌ Error: Failed to execute 'postMessage' on 'DedicatedWorkerGlobalScope': ArrayBuffer at index 0 is already detached.
 ```
 
 #### Adapter Implementation
