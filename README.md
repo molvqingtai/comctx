@@ -123,7 +123,7 @@ const count = await proxyCounter.getValue()
 
 - The injector side cannot directly use `get` and `set`; it must interact with `Counter` via asynchronous methods, but callbacks are supported.
 
-- Since the injector is a virtual proxy, to support operations like `Reflect.has(proxyCounter, 'value')`, you can set `backup` to `true`, which creates a static copy on the injector side that serves as a template without actually running.
+- Since the injector is a virtual proxy, to support operations like `Reflect.has(proxyCounter, 'key')`, you can set `backup` to `true`, which creates a static copy on the injector side that serves as a template without actually running.
 
 - `provideCounter` and `injectCounter` require user-defined adapters for different environments that implement `onMessage` and `sendMessage` methods.
 
