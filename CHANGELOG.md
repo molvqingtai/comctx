@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/molvqingtai/comctx/compare/v1.4.2...v1.4.3) (2025-09-18)
+
+
+### Bug Fixes
+
+* error not passed to the injector ([46d3363](https://github.com/molvqingtai/comctx/commit/46d33639574f01ae03dc3c5ee6afc30a159aa793))
+
 ## [1.4.2](https://github.com/molvqingtai/comctx/compare/v1.4.1...v1.4.2) (2025-09-02)
 
 
