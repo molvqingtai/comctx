@@ -1,4 +1,4 @@
-import safeInstanceOf from '@/utils/safeInstanceOf'
+import safeInstanceOf from './safeInstanceOf'
 
 // Helper function to extract transferable objects
 const extractTransfer = <T>(target: T): Transferable[] => {

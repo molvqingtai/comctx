@@ -143,6 +143,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
           id: _message.id,
           path: _message.path,
           data: _message.data,
+          error: _message.error,
           meta: _message.meta,
           namespace: options.namespace,
           timeStamp: Date.now()

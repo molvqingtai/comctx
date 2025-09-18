@@ -23,8 +23,8 @@ export interface Message<T extends MessageMeta = MessageMeta> {
   readonly sender: MessageSender
   readonly callbackIds?: string[]
   readonly args?: any[]
-  readonly error?: string
   readonly data?: any
+  readonly error?: string
   readonly meta: T
   readonly namespace: string
   readonly timeStamp: number
