@@ -10,7 +10,7 @@ void (async () => {
   })
 
   // Use the proxy object
-  const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter())
+  const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter('popup'))
 
   const initValue = await counter.getValue()
 
