@@ -3,12 +3,12 @@ import type { Adapter, Message, SendMessage, OnMessage } from 'comctx'
 
 export interface MessageMeta {
   url: string
-  sender?: 'content' | 'popup'
+  injector?: 'content' | 'popup'
 }
 
 export class ProvideAdapter implements Adapter<MessageMeta> {
   sendMessage: SendMessage<MessageMeta> = async (message) => {
-    switch (message.meta.sender) {
+    switch (message.meta.injector) {
       case 'content': {
         const tabs = await browser.tabs.query({ url: message.meta.url })
         // Send a message to the content-script
@@ -43,14 +43,14 @@ export class ProvideAdapter implements Adapter<MessageMeta> {
 }
 
 export class InjectAdapter implements Adapter<MessageMeta> {
-  sender?: 'content' | 'popup'
-  constructor(sender?: 'content' | 'popup') {
-    this.sender = sender
+  injector?: 'content' | 'popup'
+  constructor(injector?: 'content' | 'popup') {
+    this.injector = injector
   }
   sendMessage: SendMessage<MessageMeta> = (message) => {
     browser.runtime.sendMessage(browser.runtime.id, {
       ...message,
-      meta: { url: document.location.href, sender: this.sender }
+      meta: { url: document.location.href, injector: this.injector }
     })
   }
   onMessage: OnMessage<MessageMeta> = (callback) => {
