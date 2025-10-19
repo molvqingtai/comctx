@@ -3,24 +3,38 @@ import type { Adapter, Message, SendMessage, OnMessage } from 'comctx'
 
 export interface MessageMeta {
   url: string
+  sender?: 'content' | 'popup'
 }
 
 export class ProvideAdapter implements Adapter<MessageMeta> {
   sendMessage: SendMessage<MessageMeta> = async (message) => {
-    const tabs = await browser.tabs.query({ url: message.meta.url })
-
-    // console.log('RuntimeProvideAdapter SendMessage', message)
-
-    // Send a message to the content-script
-    tabs.map((tab) => browser.tabs.sendMessage(tab.id!, message))
-
-    // Send a message to the popup or other internal pages
-    browser.runtime.sendMessage(message)
+    switch (message.meta.sender) {
+      case 'content': {
+        const tabs = await browser.tabs.query({ url: message.meta.url })
+        // Send a message to the content-script
+        tabs.map((tab) => browser.tabs.sendMessage(tab.id!, message))
+        break
+      }
+      case 'popup': {
+        // Send a message to the popup or other internal pages
+        await browser.runtime.sendMessage(message).catch((error) => {
+          /**
+           * When the popup page is closed, sending a message to the popup will cause an error.
+           * In the pub/sub pattern, we can assume that the subscriber doesn’t exist,
+           * so we can safely ignore the error here.
+           */
+          if (error.message.includes('Receiving end does not exist')) {
+            return
+          }
+          throw error
+        })
+        break
+      }
+    }
   }
 
   onMessage: OnMessage<MessageMeta> = (callback) => {
     const handler = (message?: Partial<Message<MessageMeta>>) => {
-      // console.log('RuntimeProvideAdapter onMessage', message)
       callback(message)
     }
     browser.runtime.onMessage.addListener(handler)
@@ -29,19 +43,18 @@ export class ProvideAdapter implements Adapter<MessageMeta> {
 }
 
 export class InjectAdapter implements Adapter<MessageMeta> {
+  sender?: 'content' | 'popup'
+  constructor(sender?: 'content' | 'popup') {
+    this.sender = sender
+  }
   sendMessage: SendMessage<MessageMeta> = (message) => {
-    // console.log('RuntimeInjectAdapter SendMessage', {
-    //   ...message,
-    //   meta: { url: document.location.href}
-    // })
     browser.runtime.sendMessage(browser.runtime.id, {
       ...message,
-      meta: { url: document.location.href }
+      meta: { url: document.location.href, sender: this.sender }
     })
   }
   onMessage: OnMessage<MessageMeta> = (callback) => {
     const handler = (message?: Partial<Message<MessageMeta>>) => {
-      // console.log('RuntimeInjectAdapter onMessage', message)
       callback(message)
     }
     browser.runtime.onMessage.addListener(handler)

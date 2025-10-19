@@ -18,7 +18,7 @@ export default defineContentScript({
       namespace: browser.runtime.id
     })
 
-    const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter())
+    const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter('content'))
 
     // The bridge exposed to injected-script
     const [provideContentCounter] = defineProxy(() => counter, {
@@ -37,7 +37,7 @@ export default defineContentScript({
       onMount: async (container) => {
         const initValue = await counter.getValue()
 
-        const app = createElement(`     
+        const app = createElement(`
           <div id="app" class="content-app">
             <h1>content-script example</h1>
             <p>content-script -> background</p>
