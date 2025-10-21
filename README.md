@@ -64,14 +64,12 @@ export const [provideCounter, injectCounter] = defineProxy((initialValue: number
 })
 ```
 
-**Provider (Service Provider)**
-
+**Define Adapter**
 ```typescript
 // Provider side, typically for web-workers, background, etc.
 import type { Adapter, SendMessage, OnMessage } from 'comctx'
-import { provideCounter } from './shared'
 
-export default class ProvideAdapter implements Adapter {
+export default class CustomAdapter implements Adapter {
   // Implement message sending
   sendMessage: SendMessage = (message) => {
     postMessage(message)
@@ -83,8 +81,16 @@ export default class ProvideAdapter implements Adapter {
     return () => removeEventListener('message', handler)
   }
 }
+```
 
-const originCounter = provideCounter(new ProvideAdapter(), 10)
+**Provider (Service Provider)**
+
+```typescript
+// Provider side, typically for web-workers, background, etc.
+import CustomAdapter from 'CustomAdapter'
+import { provideCounter } from './shared'
+
+const originCounter = provideCounter(new CustomAdapter(), 10)
 
 originCounter.onChange(console.log)
 ```
@@ -93,23 +99,10 @@ originCounter.onChange(console.log)
 
 ```typescript
 // Injector side, typically for the main page, content-script, etc.
-import type { Adapter, SendMessage, OnMessage } from 'comctx'
+import CustomAdapter from 'CustomAdapter'
 import { injectCounter } from './shared'
 
-export default class InjectAdapter implements Adapter {
-  // Implement message sending
-  sendMessage: SendMessage = (message) => {
-    postMessage(message)
-  }
-  // Implement message listener
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    addEventListener('message', handler)
-    return () => removeEventListener('message', handler)
-  }
-}
-
-const proxyCounter = injectCounter(new InjectAdapter())
+const proxyCounter = injectCounter(new CustomAdapter())
 
 // Support for callbacks
 proxyCounter.onChange(console.log)
@@ -477,11 +470,6 @@ await counter.increment() // 1
 
 await counter.decrement() // 0
 ```
-
-## 📖 Articles
-
-- [Comctx: A Better Cross-Context Communication Library Than Comlink (English)](./docs/ARTICLE-en.md)
-- [Comctx：比 Comlink 更好的跨上下文通信库 (中文)](./docs/ARTICLE-zh.md)
 
 ## 🩷Thanks
 
