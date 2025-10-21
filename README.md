@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/d1601b54-2669-45d7-b1e5-9bbde1186856
 
 ## 🚀 Quick Start
 
-**Define a Shared Service**
+**Define Shared Service**
 
 ```typescript
 import { defineProxy } from 'comctx'
@@ -66,7 +66,6 @@ export const [provideCounter, injectCounter] = defineProxy((initialValue: number
 
 **Define Adapter**
 ```typescript
-// Provider side, typically for web-workers, background, etc.
 import type { Adapter, SendMessage, OnMessage } from 'comctx'
 
 export default class CustomAdapter implements Adapter {
