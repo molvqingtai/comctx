@@ -59,7 +59,7 @@ class Counter {
   }
 }
 
-export const [provideCounter, injectCounter] = defineProxy((initialValue: number = 0) => new Counter(initialValue), {
+export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
   namespace: '__comctx-example__'
 })
 ```
@@ -89,7 +89,7 @@ export default class CustomAdapter implements Adapter {
 import CustomAdapter from 'CustomAdapter'
 import { provideCounter } from './shared'
 
-const originCounter = provideCounter(new CustomAdapter(), 10)
+const originCounter = provideCounter(new CustomAdapter())
 
 originCounter.onChange(console.log)
 ```
@@ -130,16 +130,9 @@ By default, both provider and injector would bundle the same implementation code
 ```typescript
 // packages/provider/src/index.ts
 import { defineProxy } from 'comctx'
+import { Counter } from './shared'
 
-class Counter {
-  public value = 0
-  async increment() {
-    return ++this.value
-  }
-}
-
-const counter = new Counter()
-export const [provideCounter] = defineProxy(() => counter, {
+export const [provideCounter] = defineProxy(() => new Counter(), {
   namespace: '__comctx-example__'
 })
 ```
@@ -147,16 +140,10 @@ export const [provideCounter] = defineProxy(() => counter, {
 ```typescript
 // packages/injector/src/index.ts
 import { defineProxy } from 'comctx'
-
-// Define type-only counter for type safety
-interface Counter {
-  value: number
-  increment(): Promise<number>
-}
+import type { Counter } from './shared'
 
 // Since the injector side is a virtual proxy that doesn't actually run, we can pass an empty object
-const counter = {} as Counter
-export const [, injectCounter] = defineProxy(() => counter, {
+export const [, injectCounter] = defineProxy(() => ({}) as Counter, {
   namespace: '__comctx-example__'
 })
 ```
