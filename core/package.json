@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsdown src/index.ts --dts --format esm --sourcemap --watch",
-    "build": "tsdown src/index.ts --dts --format esm --sourcemap --minify --clean",
+    "build": "tsdown src/index.ts --dts --format esm --sourcemap --minify --clean --no-hash",
     "lint": "eslint --fix --cache",
     "check": "tsc --noEmit"
   },
