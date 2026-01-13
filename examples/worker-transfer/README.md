@@ -1,6 +1,6 @@
 # Web Worker Transfer Example
 
-This is an example of a transferable object based on web worker.
+This is an example of transferring a ReadableStream from a web worker.
 
 **Run**
 

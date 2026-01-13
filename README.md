@@ -155,31 +155,31 @@ By default, every method parameter, return value and object property value is co
 If you want a value to be transferred rather than copied — provided the value is or contains a [Transferable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects#supported_objects) — you can enable the `transfer` option. When enabled, transferable objects are automatically extracted and transferred using zero-copy semantics:
 
 ```typescript
-class Counter {
-  public value = new ArrayBuffer(4)
+import { defineProxy } from 'comctx'
+import { streamText } from 'ai'
+import { openai } from '@ai-sdk/openai'
 
-  async getValue() {
-    return this.value // Zero-copy transfer, this.value becomes detached
-  }
-
-  async increment() {
-    // Error: Cannot access this.value after transfer (detached ArrayBuffer)
-    new Int32Array(this.value)[0]++
+class AiService {
+  async translate(text: string, targetLanguage: string) {
+    const result = await streamText({
+      model: openai('gpt-4o-mini'),
+      prompt: `Translate to ${targetLanguage}:\n${text}`
+    })
+    return result.textStream // ReadableStream is transferable when transfer is enabled
   }
 }
 
-export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+export const [provideAi, injectAi] = defineProxy(() => new AiService(), {
   namespace: '__worker-transfer-example__',
   transfer: true // Automatically extract and transfer transferable objects
 })
 
-// Usage - receive transferred ArrayBuffer
-const counter = injectCounter(adapter)
-const value = await counter.getValue() // ✅ Return: zero-copy ArrayBuffer
-new Int32Array(value)[0]++ // ✅ Modify transferred ArrayBuffer directly
-
-await counter.increment() // ❌ Error: Cannot perform Construct on a detached ArrayBuffer
-await counter.getValue() // ❌ Error: Failed to execute 'postMessage' on 'DedicatedWorkerGlobalScope': ArrayBuffer at index 0 is already detached.
+// Usage - receive transferred ReadableStream from an AI translation
+const ai = injectAi(adapter)
+const stream = await ai.translate('Hello world', 'zh-CN')
+for await (const chunk of stream) {
+  console.log(chunk)
+}
 ```
 
 #### Adapter Implementation

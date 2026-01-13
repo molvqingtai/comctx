@@ -11,8 +11,7 @@ void (async () => {
   // Use the proxy object
   const counter = injectCounter(new InjectAdapter(new URL('./worker.ts', import.meta.url)))
 
-  const initBuffer = await counter.getValue()
-  const initValue = new Int32Array(initBuffer)[0]
+  const initValue = await counter.getValue()
 
   document.querySelector<HTMLDivElement>('#app')!.appendChild(
     createElement(`
@@ -25,26 +24,31 @@ void (async () => {
           <button id="increment" type="button">+</button>
         </div>
         <div class="card">
-          <h4 id="worker-value">WebWorker Buffer Value: ${initValue} </h4>
+          <h4 id="worker-value">WebWorker Stream Value: ${initValue} </h4>
         </div>
       </div>
     `)
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
-    const buffer = await counter.decrement()
-    const value = new Int32Array(buffer)[0]
-    document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
+    await counter.decrement()
   })
 
   document.querySelector<HTMLButtonElement>('#increment')!.addEventListener('click', async () => {
-    const buffer = await counter.increment()
-    const value = new Int32Array(buffer)[0]
-    document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
+    await counter.increment()
   })
 
-  counter.onChange((buffer) => {
-    const value = new Int32Array(buffer)[0]
-    document.querySelector<HTMLDivElement>('#worker-value')!.textContent = `WebWorker Buffer Value: ${value}`
-  })
+  const onChange = async () => {
+    const stream = await counter.getStream()
+    const reader = stream.getReader()
+
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
+      document.querySelector<HTMLDivElement>('#worker-value')!.textContent = `WebWorker Stream Value: ${value}`
+    }
+  }
+
+  onChange()
 })().catch(console.error)
