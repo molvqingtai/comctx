@@ -210,6 +210,8 @@ interface Adapter<T extends MessageMeta = MessageMeta> {
 }
 ```
 
+**Note:** [AsyncIterable](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncIterator) is not a  [Transferable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects) and cannot be sent across workers. Wrap it with [ReadableStream.from](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static) before returning or sending it so it can be transferred.
+
 ## 📖Examples
 
 - [web-worker-example](https://github.com/molvqingtai/comctx/tree/master/examples/web-worker)
