@@ -1,4 +1,4 @@
-import { Adapter, SendMessage, OnMessage } from 'comctx'
+import { Adapter, SendMessage, OnMessage } from 'core'
 
 export default class ProvideAdapter implements Adapter {
   sendMessage: SendMessage = (message) => {

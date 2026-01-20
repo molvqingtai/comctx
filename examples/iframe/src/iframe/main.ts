@@ -1,5 +1,5 @@
 import './style.css'
-import { defineProxy } from 'comctx'
+import { defineProxy } from 'core'
 import Counter from '../service/counter'
 import ProvideAdapter from '../service/adapter'
 

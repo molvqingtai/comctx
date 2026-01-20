@@ -35,7 +35,7 @@ importers:
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -111,7 +111,7 @@ importers:
 
   examples/browser-extension:
     dependencies:
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -148,7 +148,7 @@ importers:
 
   examples/iframe:
     dependencies:
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -185,7 +185,7 @@ importers:
 
   examples/service-worker:
     dependencies:
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../../core
       workbox-window:
@@ -228,7 +228,7 @@ importers:
 
   examples/shared-worker:
     dependencies:
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -265,7 +265,7 @@ importers:
 
   examples/web-worker:
     dependencies:
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
@@ -302,7 +302,7 @@ importers:
 
   examples/worker-transfer:
     dependencies:
-      comctx:
+      core:
         specifier: workspace:*
         version: link:../../core
     devDependencies:

@@ -1,4 +1,4 @@
-import { Adapter, SendMessage, OnMessage } from 'comctx'
+import { Adapter, SendMessage, OnMessage } from 'core'
 
 declare const self: DedicatedWorkerGlobalScope
 

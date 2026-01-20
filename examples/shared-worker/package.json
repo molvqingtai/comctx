@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "comctx": "workspace:*"
+    "core": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",

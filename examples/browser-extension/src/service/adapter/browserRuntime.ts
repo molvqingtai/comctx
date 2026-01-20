@@ -1,5 +1,5 @@
 import { browser } from '#imports'
-import type { Adapter, Message, SendMessage, OnMessage } from 'comctx'
+import type { Adapter, Message, SendMessage, OnMessage } from 'core'
 
 export interface MessageMeta {
   url: string
