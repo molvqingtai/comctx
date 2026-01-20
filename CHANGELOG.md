@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/molvqingtai/comctx/compare/v1.4.3...v1.5.0) (2026-01-20)
+
+
+### Bug Fixes
+
+* resolve lint infinite loop by renaming core package ([fa76f9a](https://github.com/molvqingtai/comctx/commit/fa76f9a456c07b9abd200b9c074f48cd4f5db869))
+
+
+### Features
+
+* add isRPCProxy function to detect RPC proxy objects ([f9e0781](https://github.com/molvqingtai/comctx/commit/f9e0781ebfbfabdb160bdb0d68c5332e4af5daa0))
+
 ## [1.4.3](https://github.com/molvqingtai/comctx/compare/v1.4.2...v1.4.3) (2025-09-18)
 
 
