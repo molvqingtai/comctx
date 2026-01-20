@@ -1,27 +1,53 @@
 import { test, describe, expect, vi } from 'vitest'
 import { defineProxy } from 'comctx'
 import type { Adapter } from 'comctx'
+import EventHub from '@resreq/event-hub'
 
 describe('defineProxy', () => {
-  test('should create provider and injector functions', () => {
-    const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }))
+  test('should communicate between provider and injector', async () => {
+    const eventHub = new EventHub()
 
-    expect(typeof provide).toBe('function')
-    expect(typeof inject).toBe('function')
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        getValue: async () => 42,
+        add: async (a: number, b: number) => a + b
+      }),
+      { heartbeatCheck: false }
+    )
+
+    provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+
+    const result = await proxy.getValue()
+    expect(result).toBe(42)
+
+    const sum = await proxy.add(10, 20)
+    expect(sum).toBe(30)
   })
 
   test('should throw error for invalid heartbeat config', () => {
     expect(() => {
       defineProxy(() => ({}), {
         heartbeatInterval: 1000,
-        heartbeatTimeout: 500 // timeout <= interval
+        heartbeatTimeout: 500
       })
     }).toThrow('Invalid heartbeat config')
-  })
-
-  test('should accept custom namespace option', () => {
-    const [provide] = defineProxy(() => ({}), { namespace: 'custom-ns' })
-    expect(typeof provide).toBe('function')
   })
 
   test('should support Reflect.has with backup option', () => {
@@ -30,32 +56,68 @@ describe('defineProxy', () => {
       onMessage: vi.fn()
     }
 
-    // Without backup: empty object, has no properties
     const [, injectWithoutBackup] = defineProxy(() => ({ test: () => 1 }), { backup: false })
     const proxyWithoutBackup = injectWithoutBackup(mockAdapter)
     expect(Reflect.has(proxyWithoutBackup, 'test')).toBe(false)
 
-    // With backup: frozen copy as template, has properties
     const [, injectWithBackup] = defineProxy(() => ({ test: () => 1 }), { backup: true })
     const proxyWithBackup = injectWithBackup(mockAdapter)
     expect(Reflect.has(proxyWithBackup, 'test')).toBe(true)
   })
 
-  test('should create bridge with nested proxy', () => {
-    const mockAdapter: Adapter = {
+  test('should support callback functions', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        onChange: (callback: (value: number) => void) => {
+          callback(100)
+        }
+      }),
+      { heartbeatCheck: false }
+    )
+
+    provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+
+    const mockCallback = vi.fn()
+    proxy.onChange(mockCallback)
+
+    await vi.waitFor(() => {
+      expect(mockCallback).toHaveBeenCalledWith(100)
+    })
+  })
+
+  test('should timeout when provider is unavailable', async () => {
+    const injectorAdapter: Adapter = {
       sendMessage: vi.fn(),
       onMessage: vi.fn()
     }
 
-    // First level: inject from background
-    const [, injectBackground] = defineProxy(() => ({ getValue: () => 42 }))
-    const backgroundProxy = injectBackground(mockAdapter)
+    const [, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      heartbeatCheck: true,
+      heartbeatInterval: 100,
+      heartbeatTimeout: 200
+    })
 
-    // Second level: provide the injected proxy as bridge
-    const [provideBridge] = defineProxy(() => backgroundProxy)
-    const bridgeProxy = provideBridge(mockAdapter)
+    const proxy = inject(injectorAdapter)
 
-    // Bridge should return the same proxy
-    expect(bridgeProxy).toBe(backgroundProxy)
+    await expect(proxy.getValue()).rejects.toThrow('Provider unavailable: heartbeat check timeout 200ms')
   })
 })

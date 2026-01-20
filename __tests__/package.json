@@ -10,11 +10,12 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "comctx": "workspace:*",
-    "@testing-library/dom": "^10.4.1"
+    "@testing-library/dom": "^10.4.1",
+    "comctx": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
+    "@resreq/event-hub": "^1.7.2",
     "@types/node": "^24.3.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
