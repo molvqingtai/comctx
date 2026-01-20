@@ -1,5 +1,5 @@
 import { browser } from '#imports'
-import { defineProxy } from 'comctx'
+import { defineProxy } from 'core'
 import { InjectAdapter as BrowserRuntimeInjectAdapter } from '@/service/adapter/browserRuntime'
 import type { Counter } from '@/service/counter'
 import createElement from '@/utils/createElement'

@@ -1,4 +1,4 @@
-import { defineProxy } from 'comctx'
+import { defineProxy } from 'core'
 
 // Proxy object that will run in the Service Worker
 class Counter {
