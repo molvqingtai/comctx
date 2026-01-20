@@ -36,7 +36,7 @@ export interface Options {
 
 export const isRPCProxy = (target: any) => {
   return (
-    (typeof target === 'object' || typeof target === 'function') && target !== null && target[PROXY_MARKER] === true
+    target !== null && (typeof target === 'object' || typeof target === 'function') && target[PROXY_MARKER] === true
   )
 }
 
