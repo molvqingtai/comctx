@@ -9,11 +9,13 @@
     "lint": "eslint --fix --cache",
     "check": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "comctx": "workspace:*"
+  },
   "devDependencies": {
     "@eslint/js": "^9.34.0",
+    "@resreq/event-hub": "^1.7.2",
     "@types/node": "^24.3.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
@@ -24,8 +26,5 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.42.0",
     "vitest": "^3.2.4"
-  },
-  "dependencies": {
-    "@testing-library/dom": "^10.4.1"
   }
 }

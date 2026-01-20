@@ -34,6 +34,12 @@ export interface Options {
   backup?: boolean
 }
 
+export const isRPCProxy = (target: any) => {
+  return (
+    target !== null && (typeof target === 'object' || typeof target === 'function') && target[PROXY_MARKER] === true
+  )
+}
+
 const heartbeatCheck = async (adapter: Adapter, options: Required<Options>) => {
   let clearHeartbeatInterval: () => void
   let clearHeartbeatTimeout: () => void
@@ -160,7 +166,10 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
   const createProxy = (target: T, path: string[]) => {
     const proxy = new Proxy<T>(target, {
       get(_target, key, receiver) {
-        if (_target[PROXY_MARKER as keyof typeof _target]) {
+        if (key === PROXY_MARKER) {
+          return true
+        }
+        if (isRPCProxy(_target)) {
           return Reflect.get(_target, key, receiver)
         }
         const noop = () => {}
