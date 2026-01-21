@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/molvqingtai/comctx/compare/v1.5.0...v1.5.1) (2026-01-21)
+
+
+### Bug Fixes
+
+* deep property access not working ([6b37031](https://github.com/molvqingtai/comctx/commit/6b3703120a370b9955d559be430b7a5d7397f397))
+
 # [1.5.0](https://github.com/molvqingtai/comctx/compare/v1.4.3...v1.5.0) (2026-01-20)
 
 
