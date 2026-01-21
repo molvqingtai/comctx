@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsdown src/index.ts --dts --format esm --sourcemap --watch",
+    "dev": "tsdown src/index.ts --dts --format esm --sourcemap --watch --no-hash",
     "build": "tsdown src/index.ts --dts --format esm --sourcemap --minify --clean --no-hash",
     "lint": "eslint --fix --cache",
     "check": "tsc --noEmit"

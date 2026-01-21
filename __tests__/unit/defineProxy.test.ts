@@ -120,4 +120,41 @@ describe('defineProxy', () => {
 
     await expect(proxy.getValue()).rejects.toThrow('Provider unavailable: heartbeat check timeout 200ms')
   })
+
+  test('should support deep property access', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        foo: {
+          bar: {
+            getValue: async () => 123
+          }
+        }
+      }),
+      { heartbeatCheck: false }
+    )
+
+    provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+
+    const result = await proxy.foo.bar.getValue()
+    expect(result).toBe(123)
+  })
 })
