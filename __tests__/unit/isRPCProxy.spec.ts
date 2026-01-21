@@ -1,5 +1,5 @@
 import { test, describe, expect, vi } from 'vitest'
-import { defineProxy, isRPCProxy } from 'core'
+import { defineProxy, isProxy } from 'core'
 import type { Adapter } from 'core'
 
 const createMockAdapter = (): Adapter => ({
@@ -7,24 +7,24 @@ const createMockAdapter = (): Adapter => ({
   onMessage: vi.fn()
 })
 
-describe('isRPCProxy', () => {
+describe('isProxy', () => {
   test('should return false for non-RPC objects', () => {
-    expect(isRPCProxy(null)).toBe(false)
-    expect(isRPCProxy({})).toBe(false)
-    expect(isRPCProxy([])).toBe(false)
-    expect(isRPCProxy(() => {})).toBe(false)
+    expect(isProxy(null)).toBe(false)
+    expect(isProxy({})).toBe(false)
+    expect(isProxy([])).toBe(false)
+    expect(isProxy(() => {})).toBe(false)
   })
 
   test('should return true for injected RPC proxy', () => {
     const [, inject] = defineProxy(() => ({ getValue: () => 42 }))
     const proxy = inject(createMockAdapter())
-    expect(isRPCProxy(proxy)).toBe(true)
+    expect(isProxy(proxy)).toBe(true)
   })
 
   test('should return false for provider object', () => {
     const [provide] = defineProxy(() => ({ getValue: () => 42 }))
     const provided = provide(createMockAdapter())
-    expect(isRPCProxy(provided)).toBe(false)
+    expect(isProxy(provided)).toBe(false)
   })
 
   test('should detect nested proxy (proxy wrapping proxy)', () => {
@@ -36,7 +36,7 @@ describe('isRPCProxy', () => {
     const [, injectContent] = defineProxy(() => backgroundCounter)
     const contentCounter = injectContent(createMockAdapter())
 
-    expect(isRPCProxy(backgroundCounter)).toBe(true)
-    expect(isRPCProxy(contentCounter)).toBe(true)
+    expect(isProxy(backgroundCounter)).toBe(true)
+    expect(isProxy(contentCounter)).toBe(true)
   })
 })
