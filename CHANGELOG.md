@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/molvqingtai/comctx/compare/v1.5.1...v1.5.2) (2026-01-21)
+
+
+### Performance Improvements
+
+* rename isRPCProxy -> isProxy & test files ([d473368](https://github.com/molvqingtai/comctx/commit/d473368523f29e4186fbbcdad1c7ec2735d8bae5))
+
 ## [1.5.1](https://github.com/molvqingtai/comctx/compare/v1.5.0...v1.5.1) (2026-01-21)
 
 
