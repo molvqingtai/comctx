@@ -169,12 +169,29 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
         if (key === PROXY_MARKER) {
           return true
         }
-        if (isRPCProxy(_target)) {
+        /**
+         * Return built-in function properties directly to support the apply trap.
+         *
+         * Problem: When the apply trap is invoked, JavaScript engine needs to verify that
+         * the target is callable by checking function properties (apply, call, bind, etc.).
+         * If we create a new proxy for these properties, the apply trap will fail with:
+         * "Function.prototype.apply was called on an object that is not a function"
+         *
+         * Solution: Directly return these built-in properties from the function target,
+         * allowing the apply trap to work correctly for RPC method calls.
+         *
+         * This enables:
+         * 1. Deep property access: counter.foo.bar.getValue()
+         * 2. Bridge pattern: defineProxy(() => proxy)
+         */
+        if (
+          typeof _target === 'function' &&
+          (key === 'apply' || key === 'call' || key === 'bind' || key === 'length' || key === 'name')
+        ) {
           return Reflect.get(_target, key, receiver)
         }
-        const noop = () => {}
-        noop[PROXY_MARKER] = true
-        return createProxy(noop as unknown as T, [...path, key] as string[])
+        // Create new proxy node for deep access
+        return createProxy((() => {}) as unknown as T, [...path, key] as string[])
       },
       apply(_target, _this, args) {
         return new Promise<Message>(async (resolve, reject) => {
