@@ -34,7 +34,7 @@ export interface Options {
   backup?: boolean
 }
 
-export const isRPCProxy = (target: any) => {
+export const isProxy = (target: any) => {
   return (
     target !== null && (typeof target === 'object' || typeof target === 'function') && target[PROXY_MARKER] === true
   )
