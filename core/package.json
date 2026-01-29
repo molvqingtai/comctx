@@ -1,7 +1,7 @@
 {
   "name": "core",
   "version": "0.0.0",
-  "description": "In any JavaScript environment, use RPC for easy cross-context communication.",
+  "description": "Use RPC to communicate easily across contexts in any JavaScript environment.",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
