@@ -1,3 +1,15 @@
+# [1.6.0](https://github.com/molvqingtai/comctx/compare/v1.5.2...v1.6.0) (2026-01-29)
+
+
+### Bug Fixes
+
+* improve Dependabot auto-merge workflow based on code review ([71fb739](https://github.com/molvqingtai/comctx/commit/71fb739b30d0adb56b73b25d905fa2f6adfd7aea))
+
+
+### Features
+
+* add Dependabot auto-merge workflow ([435554d](https://github.com/molvqingtai/comctx/commit/435554dee92698413518be44af6417f3950a532d))
+
 ## [1.5.2](https://github.com/molvqingtai/comctx/compare/v1.5.1...v1.5.2) (2026-01-21)
 
 
