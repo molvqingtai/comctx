@@ -1,6 +1,6 @@
 import { test, describe, expect, vi } from 'vitest'
-import { defineProxy, isProxy } from 'core'
-import type { Adapter } from 'core'
+import { defineProxy, isProxy } from 'comctx'
+import type { Adapter } from 'comctx'
 
 const createMockAdapter = (): Adapter => ({
   sendMessage: vi.fn(),

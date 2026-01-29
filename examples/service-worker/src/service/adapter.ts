@@ -1,5 +1,5 @@
 import { Workbox, WorkboxMessageEvent } from 'workbox-window'
-import { Adapter, SendMessage, OnMessage } from 'core'
+import { Adapter, SendMessage, OnMessage } from 'comctx'
 
 declare const self: ServiceWorkerGlobalScope
 

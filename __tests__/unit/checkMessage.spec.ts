@@ -1,6 +1,6 @@
 import { test, describe, expect } from 'vitest'
-import { checkMessage, MESSAGE_TYPE, MESSAGE_SENDER } from 'core'
-import type { Message } from 'core'
+import { checkMessage, MESSAGE_TYPE, MESSAGE_SENDER } from 'comctx'
+import type { Message } from 'comctx'
 
 describe('checkMessage', () => {
   const validMessage: Message = {

@@ -3,7 +3,7 @@ import { browser, createShadowRootUi, defineContentScript } from '#imports'
 import createElement from '@/utils/createElement'
 import '@/assets/style.css'
 
-import { defineProxy } from 'core'
+import { defineProxy } from 'comctx'
 import { InjectAdapter as BrowserRuntimeInjectAdapter } from '@/service/adapter/browserRuntime'
 import { ProvideAdapter as CustomEventProvideAdapter } from '@/service/adapter/customEvent'
 import type { Counter } from '@/service/counter'

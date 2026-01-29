@@ -4,7 +4,7 @@ import './style.css'
 
 import createElement from '../utils/createElement'
 
-import { defineProxy } from 'core'
+import { defineProxy } from 'comctx'
 import { InjectAdapter } from '../service/adapter'
 import type Counter from '../service/counter'
 
