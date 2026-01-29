@@ -1,7 +1,7 @@
 {
   "name": "comctx",
-  "version": "1.5.2",
-  "description": "In any JavaScript environment, use RPC for easy cross-context communication.",
+  "version": "0.0.0",
+  "description": "Use RPC to communicate easily across contexts in any JavaScript environment.",
   "type": "module",
   "main": "core/dist/index.js",
   "scripts": {
