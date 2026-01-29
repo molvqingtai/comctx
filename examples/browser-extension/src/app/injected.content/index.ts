@@ -4,7 +4,7 @@ import createElement from '@/utils/createElement'
 import { InjectAdapter as CustomEventInjectAdapter } from '@/service/adapter/customEvent'
 import '@/assets/style.css'
 
-import { defineProxy } from 'core'
+import { defineProxy } from 'comctx'
 import type { Counter } from '@/service/counter'
 
 export default defineContentScript({

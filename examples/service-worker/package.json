@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "core": "workspace:*",
+    "comctx": "workspace:*",
     "workbox-window": "^7.3.0"
   },
   "devDependencies": {

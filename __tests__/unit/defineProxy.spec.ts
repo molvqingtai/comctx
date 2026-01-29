@@ -1,6 +1,6 @@
 import { test, describe, expect, vi } from 'vitest'
-import { defineProxy } from 'core'
-import type { Adapter } from 'core'
+import { defineProxy } from 'comctx'
+import type { Adapter } from 'comctx'
 import EventHub from '@resreq/event-hub'
 
 describe('defineProxy', () => {

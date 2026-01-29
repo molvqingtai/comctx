@@ -1,4 +1,4 @@
-import { defineProxy } from 'core'
+import { defineProxy } from 'comctx'
 
 class Counter {
   public value: number

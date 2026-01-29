@@ -2,7 +2,7 @@ import { browser, defineBackground } from '#imports'
 import { Counter } from '@/service/counter'
 
 import { ProvideAdapter } from '@/service/adapter/browserRuntime'
-import { defineProxy } from 'core'
+import { defineProxy } from 'comctx'
 
 export default defineBackground({
   type: 'module',
