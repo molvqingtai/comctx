@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/molvqingtai/comctx/compare/v1.6.0...v1.6.1) (2026-02-02)
+
+
+### Bug Fixes
+
+* enable JavaScript evaluation for happy-dom v20 ([f880768](https://github.com/molvqingtai/comctx/commit/f88076837c5e784cf93825b755aeb66a5f4190e9))
+
 # [1.6.0](https://github.com/molvqingtai/comctx/compare/v1.5.2...v1.6.0) (2026-01-29)
 
 
