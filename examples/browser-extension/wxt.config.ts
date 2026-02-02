@@ -8,8 +8,7 @@ export default defineConfig({
   entrypointsDir: 'app',
   imports: false,
   webExt: {
-    startUrls: ['http://www.example.com/'],
-    openConsole: true
+    startUrls: ['https://www.example.com/']
   },
   manifest: () => {
     return {

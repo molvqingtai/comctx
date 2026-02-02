@@ -1,6 +1,6 @@
 import { test, describe, expect } from 'vitest'
 import { getByTestId, findByTestId, waitFor } from '@testing-library/dom'
-import newPage from 'fixtures/iframe'
+import newPage from '../fixtures/iframe'
 
 describe('iframe test', async () => {
   test('should get initial value in iframe', async () => {

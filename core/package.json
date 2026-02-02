@@ -5,8 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsdown src/index.ts --dts --format esm --sourcemap --watch --no-hash",
-    "build": "tsdown src/index.ts --dts --format esm --sourcemap --minify --clean --no-hash",
+    "dev": "tsdown src/index.ts --dts --format esm --sourcemap --watch --no-hash -no-fixed-extension",
+    "build": "tsdown src/index.ts --dts --format esm --sourcemap --minify --clean --no-hash -no-fixed-extension",
     "lint": "eslint --fix --cache",
     "check": "tsc --noEmit"
   },
@@ -36,16 +36,16 @@
   },
   "homepage": "https://github.com/molvqingtai/comctx#readme",
   "devDependencies": {
-    "@eslint/js": "^9.34.0",
-    "@types/node": "^24.3.0",
-    "eslint": "^9.34.0",
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.2.0",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "globals": "^16.3.0",
-    "prettier": "^3.6.2",
-    "tsdown": "^0.14.2",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.42.0"
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
+    "tsdown": "^0.20.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
   },
   "publishConfig": {
     "access": "public"
