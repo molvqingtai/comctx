@@ -274,9 +274,9 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
 /**
  * Creates a pair of proxies for the provider (provide) and injector (inject) to facilitate method calls and callbacks across communication layers.
  *
- * @param context - A factory function for the context that returns the target object to be proxied:
- *   - For the provider: This object directly handles remote calls.
- *   - For the injector: When the backup option is enabled, it serves as a local fallback implementation.
+ * @param context - A factory function that returns the target object to be proxied:
+ *   - For the provider: Returns an object containing the actual method implementations that handle remote calls from injectors.
+ *   - For the injector: Returns an object used for TypeScript type inference (actual calls are made through RPC proxy).
  * @param options - Configuration options:
  *   - namespace: The communication namespace used to isolate messages between different proxy instances (default is '__comctx__').
  *   - heartbeatCheck: Enable provider readiness check (default: true).
