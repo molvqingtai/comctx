@@ -1,7 +1,7 @@
 {
   "name": "comctx",
   "version": "0.0.0",
-  "description": "Use RPC to communicate easily across contexts in any JavaScript environment.",
+  "description": "git ",
   "main": "core/dist/index.js",
   "type": "module",
   "scripts": {
@@ -25,18 +25,20 @@
     "prepare": "husky"
   },
   "keywords": [
+    "rpc",
+    "WebWorker",
+    "comlink",
+    "ServiceWorker",
     "postMessage",
     "BroadcastChannel",
     "MessageChannel",
     "ipcMain",
     "MessagePort",
-    "ServiceWorker",
-    "WebWorker",
     "Browser Extension",
-    "rpc",
-    "comlink",
     "Electron",
-    "iframe"
+    "iframe",
+    "webview",
+    "React Native"
   ],
   "author": "molvqingtai",
   "license": "MIT",
@@ -49,8 +51,8 @@
   },
   "homepage": "https://github.com/molvqingtai/comctx#readme",
   "devDependencies": {
-    "@commitlint/cli": "^20.4.0",
-    "@commitlint/config-conventional": "^20.4.0",
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "husky": "^9.1.7",
