@@ -11,18 +11,19 @@
     "check": "tsc --noEmit"
   },
   "keywords": [
+    "rpc",
+    "WebWorker",
+    "comlink",
+    "ServiceWorker",
     "postMessage",
     "BroadcastChannel",
     "MessageChannel",
     "ipcMain",
     "MessagePort",
-    "ServiceWorker",
-    "WebWorker",
     "Browser Extension",
-    "rpc",
-    "comlink",
     "Electron",
     "iframe",
+    "webview",
     "React Native"
   ],
   "author": "molvqingtai",
