@@ -121,6 +121,70 @@ describe('defineProxy', () => {
     await expect(proxy.getValue()).rejects.toThrow('Provider unavailable: heartbeat check timeout 200ms')
   })
 
+  test('should support nested proxy (proxy wrapping proxy)', async () => {
+    const backgroundEventHub = new EventHub()
+    const contentScriptEventHub = new EventHub()
+
+    // Background <-> Content Script adapters
+    const backgroundProviderAdapter: Adapter = {
+      sendMessage: (message) => backgroundEventHub.emit('background-to-content-script', message),
+      onMessage: (callback) => {
+        backgroundEventHub.on('content-script-to-background', callback)
+        return () => backgroundEventHub.off('content-script-to-background', callback)
+      }
+    }
+
+    const backgroundInjectorAdapter: Adapter = {
+      sendMessage: (message) => backgroundEventHub.emit('content-script-to-background', message),
+      onMessage: (callback) => {
+        backgroundEventHub.on('background-to-content-script', callback)
+        return () => backgroundEventHub.off('background-to-content-script', callback)
+      }
+    }
+
+    // Content Script <-> Page adapters
+    const contentScriptProviderAdapter: Adapter = {
+      sendMessage: (message) => contentScriptEventHub.emit('content-script-to-page', message),
+      onMessage: (callback) => {
+        contentScriptEventHub.on('page-to-content-script', callback)
+        return () => contentScriptEventHub.off('page-to-content-script', callback)
+      }
+    }
+
+    const pageInjectorAdapter: Adapter = {
+      sendMessage: (message) => contentScriptEventHub.emit('page-to-content-script', message),
+      onMessage: (callback) => {
+        contentScriptEventHub.on('content-script-to-page', callback)
+        return () => contentScriptEventHub.off('content-script-to-page', callback)
+      }
+    }
+
+    // Background provides actual implementation
+    const [provideBackground, injectBackground] = defineProxy(
+      () => ({
+        getValue: async () => 42,
+        add: async (a: number, b: number) => a + b
+      }),
+      { heartbeatCheck: false }
+    )
+
+    provideBackground(backgroundProviderAdapter)
+    const backgroundProxy = injectBackground(backgroundInjectorAdapter)
+
+    // Content Script bridges background proxy to page
+    const [provideContentScript, injectContentScript] = defineProxy(() => backgroundProxy, { heartbeatCheck: false })
+
+    provideContentScript(contentScriptProviderAdapter)
+    const pageProxy = injectContentScript(pageInjectorAdapter)
+
+    // Page calls through the chain: Page -> Content Script -> Background
+    const result = await pageProxy.getValue()
+    expect(result).toBe(42)
+
+    const sum = await pageProxy.add(10, 20)
+    expect(sum).toBe(30)
+  })
+
   test('should support deep property access', async () => {
     const eventHub = new EventHub()
 
