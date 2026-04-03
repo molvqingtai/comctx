@@ -210,8 +210,6 @@ import {
   type SendMessage
 } from 'comctx'
 
-const WORKER_SYMBOL = Symbol('worker')
-
 class WorkerInjectAdapter implements Adapter {
   constructor(private worker: Worker) {}
 
@@ -238,27 +236,14 @@ class WorkerProvideAdapter implements Adapter {
   }
 }
 
-export function wrap<T extends object>(worker: Worker): T {
+export function wrap<T extends object>(worker: Worker) {
   const [, inject] = defineProxy(() => ({}) as T, {
     namespace: '__comlink_like__',
     heartbeatCheck: false,
     transfer: true
   })
 
-  const remote = inject(new WorkerInjectAdapter(worker)) as T
-  const proxy = new Proxy(remote as T & { [WORKER_SYMBOL]: Worker }, {
-    get(target, prop) {
-      if (prop === WORKER_SYMBOL) return worker
-      return Reflect.get(target, prop)
-    }
-  })
-
-  return proxy
-}
-
-export function terminate(remote: object) {
-  const worker = (remote as { [WORKER_SYMBOL]?: Worker })[WORKER_SYMBOL]
-  worker?.terminate()
+  return inject(new WorkerInjectAdapter(worker))
 }
 
 export function expose<T extends object>(target: T) {
@@ -289,7 +274,7 @@ export type WorkerAPI = typeof api
 **main.ts**
 
 ```typescript
-import { wrap, terminate } from './comlink'
+import { wrap } from './comlink'
 import type { WorkerAPI } from './worker'
 
 const worker = new Worker(new URL('./worker.ts', import.meta.url), {
@@ -299,8 +284,6 @@ const worker = new Worker(new URL('./worker.ts', import.meta.url), {
 const api = wrap<WorkerAPI>(worker)
 
 console.log(await api.increment(1))
-
-terminate(api)
 ```
 
 ## 🔌 Adapter Interface
