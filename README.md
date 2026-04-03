@@ -196,6 +196,113 @@ export default class TransferAdapter implements Adapter {
 }
 ```
 
+### Prefer comlink-style APIs? Or migrating from Comlink?
+
+[Comctx](https://github.com/molvqingtai/comctx)'s elegant API design makes it easy to build your own layer with an API similar to [Comlink](https://github.com/GoogleChromeLabs/comlink). The following example is inspired by [`@wordpress/worker-threads`](https://github.com/WordPress/gutenberg/tree/trunk/packages/worker-threads):
+
+**comlink.ts**
+
+```typescript
+import {
+  defineProxy,
+  type Adapter,
+  type OnMessage,
+  type SendMessage
+} from 'comctx'
+
+const WORKER_SYMBOL = Symbol('worker')
+
+class WorkerInjectAdapter implements Adapter {
+  constructor(private worker: Worker) {}
+
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    this.worker.addEventListener('message', handler)
+    return () => this.worker.removeEventListener('message', handler)
+  }
+}
+
+class WorkerProvideAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    self.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    self.addEventListener('message', handler)
+    return () => self.removeEventListener('message', handler)
+  }
+}
+
+export function wrap<T extends object>(worker: Worker): T {
+  const [, inject] = defineProxy(() => ({}) as T, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true
+  })
+
+  const remote = inject(new WorkerInjectAdapter(worker)) as T
+  const proxy = new Proxy(remote as T & { [WORKER_SYMBOL]: Worker }, {
+    get(target, prop) {
+      if (prop === WORKER_SYMBOL) return worker
+      return Reflect.get(target, prop)
+    }
+  })
+
+  return proxy
+}
+
+export function terminate(remote: object) {
+  const worker = (remote as { [WORKER_SYMBOL]?: Worker })[WORKER_SYMBOL]
+  worker?.terminate()
+}
+
+export function expose<T extends object>(target: T) {
+  const [provide] = defineProxy(() => target, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true
+  })
+
+  provide(new WorkerProvideAdapter())
+}
+```
+**worker.ts**
+
+```typescript
+import { expose } from './comlink'
+
+const api = {
+  async increment(value: number) {
+    return value + 1
+  }
+}
+
+expose(api)
+
+export type WorkerAPI = typeof api
+```
+**main.ts**
+
+```typescript
+import { wrap, terminate } from './comlink'
+import type { WorkerAPI } from './worker'
+
+const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+  type: 'module'
+})
+
+const api = wrap<WorkerAPI>(worker)
+
+console.log(await api.increment(1))
+
+terminate(api)
+```
+
 ## 🔌 Adapter Interface
 
 To adapt to different communication channels, implement the following interface:
