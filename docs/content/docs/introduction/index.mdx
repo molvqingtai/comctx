@@ -6,9 +6,11 @@ icon: Rocket
 
 ## What is Comctx?
 
-Comctx is an RPC library for communication across different contexts in a JavaScript environment.
+Comctx aims to solve the communication problem between different contexts in a JavaScript environment.
 
-Comctx has a similar goal to [Comlink](https://github.com/GoogleChromeLabs/comlink), but it is designed to adapt more flexibly to environments where [`MessagePort`](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort) is not always the right fit.
+It has a similar goal to [Comlink](https://github.com/GoogleChromeLabs/comlink), but it is not trying to reinvent the wheel. Comlink relies on [`MessagePort`](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort), which can be limited in some environments. See [Comlink issue #438](https://github.com/GoogleChromeLabs/comlink/issues/438) for one example.
+
+Comctx is designed to adapt to different JavaScript environments, including Web Workers, browser extensions, iframes, Electron, and other message-based runtimes.
 
 <video
   controls
@@ -27,14 +29,6 @@ Comctx has a similar goal to [Comlink](https://github.com/GoogleChromeLabs/comli
   />
   Your browser does not support the video tag.
 </video>
-
-It works across environments such as:
-
-- Web Workers
-- Browser Extensions
-- iframes
-- Electron
-- other message-based JavaScript runtimes
 
 ## Features
 
