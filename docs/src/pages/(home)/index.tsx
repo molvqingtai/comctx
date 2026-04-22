@@ -107,7 +107,7 @@ export default function Home() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                to="/docs/introduction/getting-started"
+                to="/docs/introduction"
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-fd-primary px-5 py-3 text-sm font-medium text-fd-primary-foreground transition-[transform,background-color] duration-200 ease-out active:scale-95 [@media(hover:hover)]:hover:opacity-90"
               >
                 Read the docs
