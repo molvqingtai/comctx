@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import type { UserConfig } from 'vite'
 
 export default defineConfig({
+  basePath: process.env.DOCS_BASE_PATH ?? '/',
   vite: {
     // we do this to avoid Vite from bundling React contexts and cause duplicated contexts conflicts.
     optimizeDeps: {
