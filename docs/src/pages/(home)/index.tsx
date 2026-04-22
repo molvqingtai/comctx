@@ -45,6 +45,13 @@ const codeCards = {
   ]
 } as const
 
+const darkCodeOptions = {
+  themes: {
+    light: 'github-dark',
+    dark: 'github-dark'
+  }
+} as const
+
 const features = [
   {
     title: 'Environment Agnostic',
@@ -126,10 +133,11 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto flex max-w-6xl flex-col gap-8 pt-2 lg:block lg:pt-6">
-          <div className="mx-auto w-full max-w-[52rem]">
+          <div className="dark mx-auto w-full max-w-[52rem]">
             <DynamicCodeBlock
               lang="ts"
               code={codeCards.shared.join('\n')}
+              options={darkCodeOptions}
               codeblock={{
                 title: 'service.ts',
                 allowCopy: false,
@@ -184,10 +192,11 @@ export default function Home() {
           </div>
 
           <div className="grid gap-8 lg:mt-1 lg:grid-cols-2 lg:items-start">
-            <div className="lg:-translate-y-1 lg:rotate-[1deg]">
+            <div className="dark lg:-translate-y-1 lg:rotate-[1deg]">
               <DynamicCodeBlock
                 lang="ts"
                 code={codeCards.worker.join('\n')}
+                options={darkCodeOptions}
                 codeblock={{
                   title: 'worker.ts',
                   allowCopy: false,
@@ -199,10 +208,11 @@ export default function Home() {
               />
             </div>
 
-            <div className="lg:translate-y-2 lg:rotate-[-1.1deg]">
+            <div className="dark lg:translate-y-2 lg:rotate-[-1.1deg]">
               <DynamicCodeBlock
                 lang="ts"
                 code={codeCards.main.join('\n')}
+                options={darkCodeOptions}
                 codeblock={{
                   title: 'main.ts',
                   allowCopy: false,
