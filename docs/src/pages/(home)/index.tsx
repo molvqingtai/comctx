@@ -191,8 +191,8 @@ export default function Home() {
             </svg>
           </div>
 
-          <div className="grid gap-8 lg:mt-1 lg:grid-cols-2 lg:items-start">
-            <div className="dark lg:-translate-y-1 lg:rotate-[1deg]">
+          <div className="grid min-w-0 gap-8 lg:mt-1 lg:grid-cols-2 lg:items-start">
+            <div className="dark min-w-0 w-full lg:-translate-y-1 lg:rotate-[1deg]">
               <DynamicCodeBlock
                 lang="ts"
                 code={codeCards.worker.join('\n')}
@@ -202,13 +202,13 @@ export default function Home() {
                   allowCopy: false,
                   className: 'my-0',
                   viewportProps: {
-                    className: 'max-h-none overflow-visible'
+                    className: 'max-h-none overflow-x-auto overflow-y-visible'
                   }
                 }}
               />
             </div>
 
-            <div className="dark lg:translate-y-2 lg:rotate-[-1.1deg]">
+            <div className="dark min-w-0 w-full lg:translate-y-2 lg:rotate-[-1.1deg]">
               <DynamicCodeBlock
                 lang="ts"
                 code={codeCards.main.join('\n')}
@@ -218,7 +218,7 @@ export default function Home() {
                   allowCopy: false,
                   className: 'my-0',
                   viewportProps: {
-                    className: 'max-h-none overflow-visible'
+                    className: 'max-h-none overflow-x-auto overflow-y-visible'
                   }
                 }}
               />
