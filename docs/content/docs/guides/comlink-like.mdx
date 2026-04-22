@@ -1,0 +1,123 @@
+---
+title: Comlink-like API
+description: Build a Comlink-like wrap/expose layer on top of Comctx.
+icon: Blocks
+---
+
+This guide shows how to build a Comlink-like wrap/expose layer on top of Comctx.
+
+Use this pattern if you prefer the [Comlink](https://github.com/GoogleChromeLabs/comlink) style API, or if you are migrating from Comlink and want to keep a similar developer experience.
+
+The example below is inspired by [`@wordpress/worker-threads`](https://github.com/WordPress/gutenberg/tree/trunk/packages/worker-threads).
+
+## `comlink.ts`
+
+```ts title="comlink.ts"
+import {
+  defineProxy,
+  type Adapter,
+  type OnMessage,
+  type SendMessage
+} from 'comctx'
+
+class WorkerInjectAdapter implements Adapter {
+  constructor(private worker: Worker) {}
+
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    this.worker.addEventListener('message', handler)
+    return () => this.worker.removeEventListener('message', handler)
+  }
+}
+
+class WorkerProvideAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    self.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    self.addEventListener('message', handler)
+    return () => self.removeEventListener('message', handler)
+  }
+}
+
+export function wrap<T extends object>(worker: Worker) {
+  const [, inject] = defineProxy(() => ({}) as T, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true
+  })
+
+  return inject(new WorkerInjectAdapter(worker))
+}
+
+export function expose<T extends object>(target: T) {
+  const [provide] = defineProxy(() => target, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true
+  })
+
+  provide(new WorkerProvideAdapter())
+}
+```
+
+## `worker.ts`
+
+```ts title="worker.ts"
+import { expose } from './comlink'
+
+const api = {
+  async increment(value: number) {
+    return value + 1
+  }
+}
+
+expose(api)
+
+export type WorkerAPI = typeof api
+```
+
+## `main.ts`
+
+```ts title="main.ts"
+import { wrap } from './comlink'
+import type { WorkerAPI } from './worker'
+
+const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+  type: 'module'
+})
+
+const api = wrap<WorkerAPI>(worker)
+
+console.log(await api.increment(1))
+```
+
+## How it works
+
+This wrapper keeps the Comctx transport model, but exposes a smaller API surface:
+
+- `wrap(worker)` creates an Injector-side proxy
+- `expose(api)` registers the Provider-side implementation
+- both sides use the same `namespace`
+- `heartbeatCheck: false` disables the provider readiness check, which is useful when the Provider side may not be ready immediately, such as when worker code or iframe content loads asynchronously
+- `transfer: true` enables transferable object support
+
+## When to use this pattern
+
+Use this pattern when:
+
+- you prefer a [Comlink](https://github.com/GoogleChromeLabs/comlink)-style `wrap` / `expose` API
+- you are migrating from [Comlink](https://github.com/GoogleChromeLabs/comlink)
+- you want a thin compatibility layer without changing the underlying Comctx model
+
+## Next steps
+
+- [Getting Started](/docs/introduction/getting-started)
+- [Transferable Objects](/docs/guides/transferable-objects)
+- [Examples](/docs/examples)

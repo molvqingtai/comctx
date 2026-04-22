@@ -1,0 +1,268 @@
+---
+title: Core Concepts
+description: Understand the core mental model behind Comctx.
+icon: Network
+---
+
+Comctx uses RPC to make communication across JavaScript contexts easier.
+
+The core idea is simple:
+
+- the **Provider** owns the real service
+- the **Injector** receives a virtual proxy
+- the **Adapter** connects both sides through a message channel
+
+## Provider and Injector
+
+In Comctx, the Provider side and Injector side work with the same service shape in different ways.
+
+### Provider
+
+The Provider owns the real instance.
+
+Typical Provider environments include:
+
+- Web Workers
+- background scripts
+- iframe pages
+
+Example:
+
+```ts
+import CustomAdapter from './adapter'
+import { provideCounter } from './shared'
+
+const originCounter = provideCounter(new CustomAdapter())
+
+originCounter.onChange(console.log)
+```
+
+`originCounter` directly references the real `Counter` instance.
+
+### Injector
+
+The Injector does not receive the real object.
+
+Instead, it receives a virtual proxy that forwards requests to the Provider side.
+
+Typical Injector environments include:
+
+- main pages
+- content scripts
+- popup pages
+- host pages
+
+Example:
+
+```ts
+import CustomAdapter from './adapter'
+import { injectCounter } from './shared'
+
+const proxyCounter = injectCounter(new CustomAdapter())
+
+proxyCounter.onChange(console.log)
+
+await proxyCounter.increment()
+const count = await proxyCounter.getValue()
+```
+
+`proxyCounter` is a virtual proxy. It forwards method calls to the real `Counter` instance on the Provider side.
+
+## Shared service definition
+
+Both sides are built from the same shared service definition.
+
+```ts
+import { defineProxy } from 'comctx'
+
+class Counter {
+  public value: number
+
+  constructor(initialValue: number = 0) {
+    this.value = initialValue
+  }
+
+  async getValue() {
+    return this.value
+  }
+
+  async onChange(callback: (value: number) => void) {
+    let oldValue = this.value
+    setInterval(() => {
+      const newValue = this.value
+      if (oldValue !== newValue) {
+        callback(newValue)
+        oldValue = newValue
+      }
+    })
+  }
+
+  async increment() {
+    return ++this.value
+  }
+
+  async decrement() {
+    return --this.value
+  }
+}
+
+export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+})
+```
+
+This shared definition gives you:
+
+- a Provider helper: `provideCounter`
+- an Injector helper: `injectCounter`
+
+## Adapter
+
+Comctx does not assume one fixed transport.
+
+Instead, you provide an Adapter for your environment.
+
+An Adapter must do two things:
+
+- send messages
+- listen for messages
+
+Example:
+
+```ts
+import type { Adapter, SendMessage, OnMessage } from 'comctx'
+
+export default class CustomAdapter implements Adapter {
+  sendMessage: SendMessage = (message) => {
+    postMessage(message)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    addEventListener('message', handler)
+    return () => removeEventListener('message', handler)
+  }
+}
+```
+
+This is what makes Comctx work across different environments such as:
+
+- Web Workers
+- browser extensions
+- iframes
+- Electron
+
+## How calls work
+
+A remote call follows this flow:
+
+1. the Injector calls a method on the proxy
+2. Comctx turns that call into a message
+3. the Adapter sends the message to the Provider side
+4. the Provider runs the real method
+5. the result is sent back to the Injector
+
+Because the Injector is talking to a virtual proxy, it cannot directly use `get` and `set` on the real object.
+
+Instead, it should interact through async methods.
+
+Prefer this:
+
+```ts
+await proxyCounter.increment()
+const count = await proxyCounter.getValue()
+```
+
+Over this:
+
+```ts
+proxyCounter.value
+proxyCounter.value = 1
+```
+
+## Callbacks
+
+Comctx supports callbacks across the boundary.
+
+That means the Injector can pass a callback and the Provider can invoke it through the proxy channel.
+
+Example:
+
+```ts
+proxyCounter.onChange(console.log)
+```
+
+This is one of the reasons the `Counter` example uses `onChange`.
+
+## Namespace
+
+`namespace` identifies the communication channel.
+
+The Provider and Injector must use the same `namespace`.
+
+```ts
+namespace: '__comctx-example__'
+```
+
+If the namespace does not match, both sides will not talk to the same service.
+
+## Provider readiness checks
+
+By default, Comctx can perform a readiness check before the Injector starts talking to the Provider.
+
+This is useful when the Provider side may not be available immediately, for example:
+
+- an iframe has not finished loading yet
+- worker code is still loading asynchronously
+- your runtime creates the message channel before the real service is ready
+
+This behavior is controlled by `heartbeatCheck`.
+
+When enabled, the Injector waits for the Provider to respond before continuing.
+
+This helps avoid sending calls too early in startup flows where the remote side is not ready yet.
+
+If you are building a wrapper where you do not want that behavior, you can disable it:
+
+```ts
+const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+  heartbeatCheck: false,
+})
+```
+
+## Backup
+
+Because the Injector is a virtual proxy, some reflective operations do not behave like a normal local object.
+
+If you need support for operations such as:
+
+```ts
+Reflect.has(proxyCounter, 'key')
+```
+
+you can enable `backup: true`.
+
+This creates a static copy on the Injector side that serves as a template without actually running.
+
+## Deep access through the proxy
+
+The Injector proxy can forward deep method calls as long as the access stays inside the service shape.
+
+For example, nested calls such as:
+
+```ts
+await proxyCounter.foo.bar()
+```
+
+can still be resolved through the proxy channel.
+
+What still matters is the same core rule: the Injector is not working with a normal local object.
+
+That means method calls are the safest mental model, while reflective access and direct local mutation may need options such as `backup`.
+
+## Next steps
+
+- Read [Getting Started](/docs/introduction/getting-started) for the first setup
+- Read [Transferable Objects](/docs/guides/transferable-objects) for transferable objects
+- Read [Examples](/docs/examples) for real repository examples

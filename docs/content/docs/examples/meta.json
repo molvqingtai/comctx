@@ -1,0 +1,4 @@
+{
+  "title": "Examples",
+  "pages": ["web-worker", "browser-extension", "iframe"]
+}

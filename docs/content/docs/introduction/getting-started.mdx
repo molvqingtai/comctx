@@ -1,0 +1,157 @@
+---
+title: Getting Started
+description: Build your first Comctx connection with the core Comctx quick start flow.
+icon: Flag
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+
+This page follows the core Comctx quick start flow.
+
+<Steps>
+  <Step>
+    ## Installation
+
+    Install `comctx` in your project:
+
+    <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+      <Tab value="pnpm">
+        ```bash
+        pnpm install comctx
+        ```
+      </Tab>
+      <Tab value="npm">
+        ```bash
+        npm install comctx
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        yarn add comctx
+        ```
+      </Tab>
+      <Tab value="bun">
+        ```bash
+        bun add comctx
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ## Define the shared service
+
+    ```ts title="shared.ts"
+    import { defineProxy } from 'comctx'
+
+    class Counter {
+      public value: number
+
+      constructor(initialValue: number = 0) {
+        this.value = initialValue
+      }
+
+      async getValue() {
+        return this.value
+      }
+
+      async onChange(callback: (value: number) => void) {
+        let oldValue = this.value
+        setInterval(() => {
+          const newValue = this.value
+          if (oldValue !== newValue) {
+            callback(newValue)
+            oldValue = newValue
+          }
+        })
+      }
+
+      async increment() {
+        return ++this.value
+      }
+
+      async decrement() {
+        return --this.value
+      }
+    }
+
+    export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+      namespace: '__comctx-example__'
+    })
+    ```
+  </Step>
+
+  <Step>
+    ## Define the adapter
+
+    ```ts title="adapter.ts"
+    import type { Adapter, SendMessage, OnMessage } from 'comctx'
+
+    export default class CustomAdapter implements Adapter {
+      // Implement message sending
+      sendMessage: SendMessage = (message) => {
+        postMessage(message)
+      }
+
+      // Implement message listener
+      onMessage: OnMessage = (callback) => {
+        const handler = (event: MessageEvent) => callback(event.data)
+        addEventListener('message', handler)
+        return () => removeEventListener('message', handler)
+      }
+    }
+    ```
+  </Step>
+
+  <Step>
+    ## Create the Provider
+
+    ```ts title="provider.ts"
+    import CustomAdapter from 'CustomAdapter'
+    import { provideCounter } from './shared'
+
+    const originCounter = provideCounter(new CustomAdapter())
+
+    originCounter.onChange(console.log)
+    ```
+
+    `originCounter` directly references the real `Counter` instance.
+  </Step>
+
+  <Step>
+    ## Create the Injector
+
+    ```ts title="injector.ts"
+    import CustomAdapter from 'CustomAdapter'
+    import { injectCounter } from './shared'
+
+    const proxyCounter = injectCounter(new CustomAdapter())
+
+    // Support for callbacks
+    proxyCounter.onChange(console.log)
+
+    // Transparently call remote methods
+    await proxyCounter.increment()
+    const count = await proxyCounter.getValue()
+    ```
+
+    `proxyCounter` is a virtual proxy that forwards requests to the `Counter` on the Provider side.
+  </Step>
+
+  <Step>
+    ## Important notes
+
+    - `originCounter` and `proxyCounter` share the same `Counter` instance.
+    - The Injector side cannot directly use `get` and `set`; it must interact with `Counter` via asynchronous methods.
+    - Callbacks are supported.
+    - To support operations like `Reflect.has(proxyCounter, 'key')`, you can set `backup` to `true`.
+    - `provideCounter` and `injectCounter` require user-defined adapters for different environments that implement `onMessage` and `sendMessage`.
+  </Step>
+</Steps>
+
+## Next steps
+
+- [Core Concepts](/docs/introduction/core-concepts)
+- [Transferable Objects](/docs/guides/transferable-objects)
+- [Examples](/docs/examples)

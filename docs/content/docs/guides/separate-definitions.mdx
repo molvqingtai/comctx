@@ -1,0 +1,83 @@
+---
+title: Separate Definitions
+description: Define Provider and Injector proxies separately to avoid bundling the same implementation on both sides.
+icon: Split
+---
+
+This guide shows how to define the Provider and Injector separately in multi-package architectures.
+
+In multi-package architectures, you can define the Provider and Injector separately so the Injector side only keeps the type shape it needs.
+
+## Why use separate definitions?
+
+By default, both sides may bundle the same implementation code.
+
+In many cases, that is unnecessary because:
+
+- the **Provider** needs the real implementation
+- the **Injector** only needs the type shape
+- both sides still need to share the same `namespace`
+
+This pattern is useful when:
+
+- provider and injector live in different packages
+- you want to avoid bundling implementation code into the injector side
+- you want a cleaner separation between runtime ownership and type usage
+
+## Provider side
+
+Create the Provider definition on the side that owns the real implementation.
+
+```ts title="index.ts"
+import { defineProxy } from 'comctx'
+import { Counter } from './shared'
+
+export const [provideCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__'
+})
+```
+
+This side owns the real `Counter` instance and handles incoming remote calls.
+
+## Injector side
+
+Create the Injector definition separately on the side that only needs the type shape.
+
+```ts title="index.ts"
+import { defineProxy } from 'comctx'
+import type { Counter } from './shared'
+
+// Since the injector side is a virtual proxy that doesn't actually run, we can pass an empty object
+export const [, injectCounter] = defineProxy(() => ({}) as Counter, {
+  namespace: '__comctx-example__'
+})
+```
+
+Because the Injector is a virtual proxy, it does not need the real implementation to run locally.
+
+## Important rule
+
+The Provider and Injector must use the same `namespace`.
+
+```ts
+namespace: '__comctx-example__'
+```
+
+If the namespace does not match, both sides will not communicate with the same service.
+
+## How this works
+
+With this pattern:
+
+- the Provider keeps the real implementation
+- the Injector keeps only the type shape
+- both sides still share the same service contract
+- the runtime boundary stays explicit
+
+This gives you a cleaner setup for multi-package or multi-bundle projects.
+
+## Next steps
+
+- [Comlink-like API](/docs/guides/comlink-like)
+- [Transferable Objects](/docs/guides/transferable-objects)
+- [API Reference](/docs/reference/api-reference)

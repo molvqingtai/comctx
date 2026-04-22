@@ -1,0 +1,198 @@
+---
+title: FAQ
+description: Short answers to common questions about Comctx.
+icon: MessageCircleQuestionMark
+---
+
+## What is Comctx?
+
+Comctx is an RPC library for communication across different JavaScript contexts.
+
+It is designed to make cross-context communication easier in environments such as:
+
+- Web Workers
+- Browser Extensions
+- iframes
+- Electron
+- other JavaScript runtimes with message-based communication
+
+## How is Comctx different from Comlink?
+
+Comctx has a similar goal to [Comlink](https://github.com/GoogleChromeLabs/comlink), but it is designed to adapt more flexibly to different environments.
+
+Comlink relies on [`MessagePort`](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort), which can be limiting in some environments, while Comctx is built around an adapter model that can be adapted to different communication channels. See also [Comlink issue #438](https://github.com/GoogleChromeLabs/comlink/issues/438).
+
+## What are the main features of Comctx?
+
+Comctx provides:
+
+- **Environment Agnostic** support across Web Workers, Browser Extensions, iframes, Electron, and more
+- **Bidirectional Communication** with method calls and callback support
+- **Zero Copy** transfer for transferable objects
+- **Type Safety** with TypeScript
+- **Lightweight** core size
+- **Fault Tolerance** with backup implementations and heartbeat checks
+
+## What is a Provider?
+
+The Provider side owns the real service implementation.
+
+The Provider is typically used in places such as:
+
+- web workers
+- background scripts
+- iframe pages
+
+A Provider is created by calling the function returned from `defineProxy` on the side that owns the real object.
+
+## What is an Injector?
+
+The Injector side receives a virtual proxy for the remote service.
+
+The Injector is typically used in places such as:
+
+- the main page
+- content scripts
+- popup pages
+
+The Injector does not directly access object properties. It interacts with the remote service through async methods, and callbacks are supported.
+
+## What is an Adapter?
+
+An Adapter is the environment-specific bridge that Comctx uses to send and receive messages.
+
+To support a runtime, you implement:
+
+- `sendMessage`
+- `onMessage`
+
+The adapter interface is the way Comctx adapts to different communication channels.
+
+## Why do Provider and Injector need the same `namespace`?
+
+The `namespace` identifies the communication channel for a proxy pair.
+
+If the Provider and Injector do not use the same `namespace`, they will not communicate with each other.
+
+This pattern appears throughout the examples in this project.
+
+## Why are Comctx methods usually async?
+
+Comctx models remote interaction through async methods because the Injector is talking to a virtual proxy across a context boundary.
+
+This includes methods like:
+
+- `getValue()`
+- `increment()`
+- `decrement()`
+- `onChange(callback)`
+
+The Injector side should interact with the service through async methods instead of direct property access.
+
+## Does Comctx support callbacks?
+
+Yes.
+
+Comctx supports callback-based interaction through methods such as:
+
+```ts
+proxyCounter.onChange(console.log)
+```
+
+This is one of Comctx's core features under bidirectional communication.
+
+## Does Comctx support transferable objects?
+
+Yes.
+
+Comctx natively supports [transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects) and can automatically extract and transfer them when `transfer: true` is enabled.
+
+Examples of transferable values include:
+
+- `ReadableStream`
+- other transferable objects supported by the runtime
+
+## What does `transfer: true` do?
+
+When `transfer: true` is enabled, transferable objects are automatically extracted and passed through the adapter's `transfer` parameter.
+
+This allows zero-copy transfer when the runtime and transport support it.
+
+By default, values are copied using [structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
+
+## What does `backup: true` do?
+
+The Injector side is a virtual proxy.
+
+If you need support for operations such as:
+
+```ts
+Reflect.has(proxyCounter, 'key')
+```
+
+you can enable `backup: true`.
+
+This creates a static copy on the Injector side that acts as a template without actually running the real implementation there.
+
+## What does `heartbeatCheck` do?
+
+`heartbeatCheck` is used for provider readiness checks.
+
+It helps when the Provider side may not be ready immediately, such as when worker code is still loading asynchronously or when an iframe has not finished loading yet.
+
+The Comlink-style wrapper example also shows `heartbeatCheck: false`, which indicates that this option can be disabled when you do not want that readiness check behavior.
+
+## Can I define Provider and Injector separately?
+
+Yes.
+
+Comctx supports an advanced usage pattern where the Provider and Injector are defined separately.
+
+This is useful in multi-package architectures where:
+
+- the Provider needs the real implementation
+- the Injector only needs the type shape
+- you want to avoid bundling the same implementation code on both sides
+
+## Can I build a Comlink-style API on top of Comctx?
+
+Yes.
+
+Comctx can be used to build `wrap` / `expose` helpers for a Comlink-style API.
+
+That example uses:
+
+- `defineProxy`
+- custom worker adapters
+- `heartbeatCheck: false`
+- `transfer: true`
+
+## Which examples are available in this repository?
+
+This repository includes these examples:
+
+- Web Worker
+- Shared Worker
+- Service Worker
+- Worker Transfer
+- Browser Extension
+- iframe
+
+## Can I use `AsyncIterable` as a transferable value?
+
+No.
+
+`AsyncIterable` is not transferable and cannot be sent across workers.
+
+If you need to send stream-like output, wrap it with [`ReadableStream.from`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static) before returning or sending it.
+
+## Where should I go next?
+
+A good reading path is:
+
+1. [Getting Started](/docs/introduction/getting-started)
+2. [Core Concepts](/docs/introduction/core-concepts)
+3. [Adapter Guide](/docs/guides/adapter)
+4. [Transferable Objects](/docs/guides/transferable-objects)
+5. [API Reference](/docs/reference/api-reference)
+6. [Examples](/docs/examples)
