@@ -1,6 +1,7 @@
 const demoVideoUrl = 'https://github.com/user-attachments/assets/d1601b54-2669-45d7-b1e5-9bbde1186856'
 import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock'
 import { gitConfig } from '@/lib/shared'
+import { Link } from 'waku'
 
 const codeCards = {
   shared: [
@@ -98,12 +99,12 @@ export default function Home() {
             </div>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="/docs/introduction/getting-started"
+              <Link
+                to="/docs/introduction/getting-started"
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-fd-primary px-5 py-3 text-sm font-medium text-fd-primary-foreground transition-[transform,background-color] duration-200 ease-out active:scale-95 [@media(hover:hover)]:hover:opacity-90"
               >
                 Read the docs
-              </a>
+              </Link>
               <a
                 href={`https://github.com/${gitConfig.user}/${gitConfig.repo}`}
                 target="_blank"
