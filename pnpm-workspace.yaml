@@ -1,5 +1,6 @@
 packages:
   - 'core'
+  - 'docs'
   - '__tests__'
   - '__tests__/fixtures/*'
   - 'examples/*'

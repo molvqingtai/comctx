@@ -1,0 +1,399 @@
+---
+title: Iframe
+description: Build a Comctx connection between a host page and an iframe using the real file layout from this repository.
+icon: PanelsTopLeft
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import {
+  Callout,
+  CalloutTitle,
+  CalloutDescription,
+} from 'fumadocs-ui/components/callout'
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+import { Files, File, Folder } from 'fumadocs-ui/components/files'
+
+## Example setup
+
+This example is a browser project that uses an iframe-based communication flow.
+
+It includes:
+
+- a host page
+- an iframe page
+- a message channel based on `window.postMessage`
+
+<Callout type="info">
+  <CalloutTitle>What this page covers</CalloutTitle>
+  <CalloutDescription>
+    This page is aligned with the real `examples/iframe` source in this
+    repository. The host page is the Injector, and the iframe page is the
+    Provider.
+  </CalloutDescription>
+</Callout>
+
+## Source
+
+- [View source on GitHub](https://github.com/molvqingtai/comctx/tree/master/examples/iframe)
+
+## File layout
+
+The real example is organized like this:
+
+<Files>
+  <File name="index.html" />
+  <File name="iframe.html" />
+  <Folder name="src" defaultOpen>
+    <Folder name="index" defaultOpen>
+      <File name="main.ts" />
+    </Folder>
+    <Folder name="iframe" defaultOpen>
+      <File name="main.ts" />
+    </Folder>
+    <Folder name="service" defaultOpen>
+      <File name="adapter.ts" />
+      <File name="counter.ts" />
+    </Folder>
+  </Folder>
+</Files>
+
+<Steps>
+  <Step>
+    ## Installation
+
+    Install `comctx` in your project:
+
+    <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+      <Tab value="pnpm">
+        ```bash
+        pnpm add comctx
+        ```
+      </Tab>
+      <Tab value="npm">
+        ```bash
+        npm install comctx
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        yarn add comctx
+        ```
+      </Tab>
+      <Tab value="bun">
+        ```bash
+        bun add comctx
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ## Create the shared counter service
+
+    Create `counter.ts`:
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <File name="counter.ts" />
+      </Folder>
+    </Files>
+
+    ```ts title="counter.ts"
+    export default class Counter {
+      public value = 0
+
+      async getValue() {
+        return this.value
+      }
+
+      async onChange(callback: (value: number) => void) {
+        let oldValue = this.value
+        setInterval(() => {
+          const newValue = this.value
+          if (oldValue !== newValue) {
+            callback(newValue)
+            oldValue = newValue
+          }
+        })
+      }
+
+      async increment() {
+        return ++this.value
+      }
+
+      async decrement() {
+        return --this.value
+      }
+    }
+    ```
+
+    This is the real service implementation used by the iframe example.
+
+    <Callout type="info">
+      <CalloutTitle>Why this service matters</CalloutTitle>
+      <CalloutDescription>
+        The example uses async methods and an `onChange` callback so the host
+        page and iframe page can stay in sync through the Comctx boundary.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the adapters
+
+    Create `adapter.ts`:
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <File name="adapter.ts" />
+      </Folder>
+    </Files>
+
+    <Tabs items={['ProvideAdapter', 'InjectAdapter']}>
+      <Tab value="ProvideAdapter">
+        ```ts title="adapter.ts"
+        import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+        export default class ProvideAdapter implements Adapter {
+          sendMessage: SendMessage = (message) => {
+            window.parent.postMessage(message, '*')
+          }
+
+          onMessage: OnMessage = (callback) => {
+            const handler = (event: MessageEvent) => callback(event.data)
+            window.parent.addEventListener('message', handler)
+            return () => window.parent.removeEventListener('message', handler)
+          }
+        }
+        ```
+      </Tab>
+      <Tab value="InjectAdapter">
+        ```ts title="adapter.ts"
+        import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+        export class InjectAdapter implements Adapter {
+          sendMessage: SendMessage = (message) => {
+            window.postMessage(message, '*')
+          }
+
+          onMessage: OnMessage = (callback) => {
+            const handler = (event: MessageEvent) => {
+              callback(event.data)
+            }
+            window.addEventListener('message', handler)
+            return () => window.removeEventListener('message', handler)
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    The real example keeps both adapters in the same file.
+
+    <Callout type="warning">
+      <CalloutTitle>Production note</CalloutTitle>
+      <CalloutDescription>
+        The repository example uses `'*'` for simplicity. In production, prefer
+        explicit origins and validate incoming messages before forwarding them.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the iframe page entry
+
+    Create `src/iframe/main.ts`:
+
+    <Files>
+      <Folder name="src" defaultOpen>
+        <Folder name="iframe" defaultOpen>
+          <File name="main.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="main.ts"
+    import './style.css'
+    import { defineProxy } from 'comctx'
+    import Counter from '../service/counter'
+    import ProvideAdapter from '../service/adapter'
+
+    // Register the proxy object
+    void (async () => {
+      const [provideCounter] = defineProxy(() => new Counter(), {
+        namespace: '__iframe-example__'
+      })
+
+      const counter = provideCounter(new ProvideAdapter())
+
+      document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+        <div>
+          <h1>I am an iframe page</h1>
+          <div class="card">
+            <h4>Value: <span data-testid="value" id="value">${counter.value}</span></h4>
+          </div>
+        </div>
+      `
+
+      counter.onChange((value) => {
+        document.querySelector<HTMLSpanElement>('#value')!.textContent = `${value}`
+      })
+    })().catch(console.error)
+    ```
+
+    This is the Provider side. The iframe owns the real `Counter` instance and
+    updates its own UI when the value changes.
+  </Step>
+
+  <Step>
+    ## Create the host page entry
+
+    Create `src/index/main.ts`:
+
+    <Files>
+      <Folder name="src" defaultOpen>
+        <Folder name="index" defaultOpen>
+          <File name="main.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="main.ts"
+    import { name, description } from '../../package.json'
+
+    import './style.css'
+
+    import createElement from '../utils/createElement'
+
+    import { defineProxy } from 'comctx'
+    import { InjectAdapter } from '../service/adapter'
+    import type Counter from '../service/counter'
+
+    void (async () => {
+      const [, injectCounter] = defineProxy(() => ({}) as Counter, {
+        namespace: '__iframe-example__'
+      })
+
+      // Use the proxy object
+      const counter = injectCounter(new InjectAdapter())
+
+      const initValue = await counter.getValue()
+
+      document.querySelector<HTMLDivElement>('#app')!.insertBefore(
+        createElement(`
+          <div>
+            <h1>${name}</h1>
+            <p>${description}</p>
+            <div class="card">
+              <button data-testid="decrement" id="decrement" type="button">-</button>
+              <div data-testid="value" id="value">${initValue}</div>
+              <button data-testid="increment" id="increment" type="button">+</button>
+            </div>
+          </div>
+        `),
+        document.querySelector<HTMLDivElement>('#iframe')!
+      )
+
+      document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
+        await counter.decrement()
+      })
+
+      document.querySelector<HTMLButtonElement>('#increment')!.addEventListener('click', async () => {
+        await counter.increment()
+      })
+
+      counter.onChange((value) => {
+        document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
+      })
+    })().catch(console.error)
+    ```
+
+    This is the Injector side. The host page receives a proxy and updates its UI
+    through remote method calls and callback notifications.
+  </Step>
+
+  <Step>
+    ## Add the HTML entry files
+
+    The real example uses two HTML files.
+
+    <Tabs items={['index.html', 'iframe.html']}>
+      <Tab value="index.html">
+        <Files>
+          <File name="index.html" />
+        </Files>
+
+        ```html title="index.html"
+        <!doctype html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Index Page</title>
+          </head>
+          <body>
+            <div id="app">
+              <iframe data-testid="iframe" id="iframe" src="./iframe.html" frameborder="0"></iframe>
+            </div>
+            <script type="module" src="/src/index/main.ts"></script>
+          </body>
+        </html>
+        ```
+      </Tab>
+      <Tab value="iframe.html">
+        <Files>
+          <File name="iframe.html" />
+        </Files>
+
+        ```html title="iframe.html"
+        <!doctype html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>IFrame Page</title>
+          </head>
+          <body>
+            <div id="app"></div>
+            <script type="module" src="/src/iframe/main.ts"></script>
+          </body>
+        </html>
+        ```
+      </Tab>
+    </Tabs>
+
+    The host page loads `iframe.html`, and the iframe page boots its own
+    Provider entry from `src/iframe/main.ts`.
+  </Step>
+
+  <Step>
+    ## Finish
+
+    Once everything is connected, the flow looks like this:
+
+    1. the host page calls `counter.increment()`
+    2. Comctx turns that call into a message
+    3. the `InjectAdapter` sends the message through `window.postMessage`
+    4. the iframe page runs the real method on `Counter`
+    5. the result is sent back
+    6. both pages update through `onChange`
+
+    A working setup should satisfy all of these:
+
+    - both sides use the same `namespace`
+    - the host page loads `iframe.html`
+    - the iframe page registers the Provider before handling calls
+    - the host page injects the proxy through `InjectAdapter`
+    - both sides listen on the expected window message channel
+  </Step>
+</Steps>
+
+## Next steps
+
+After this page, continue with:
+
+- [Adapter Guide](/docs/guides/adapter)
+- [Web Worker](/docs/examples/web-worker)
+- [Browser Extension](/docs/examples/browser-extension)

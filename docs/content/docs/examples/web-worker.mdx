@@ -1,0 +1,365 @@
+---
+title: Web Worker
+description: Build a Comctx connection between the main page and a Web Worker using the real file layout from this repository.
+icon: Cpu
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import {
+  Callout,
+  CalloutTitle,
+  CalloutDescription,
+} from 'fumadocs-ui/components/callout'
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+import { Files, File, Folder } from 'fumadocs-ui/components/files'
+
+## Example setup
+
+This example is a browser project that uses a Web Worker.
+
+It includes:
+
+- a main page entry
+- a worker entry
+- a shared service definition
+- worker-specific adapters
+
+<Callout type="info">
+  <CalloutTitle>What this page covers</CalloutTitle>
+  <CalloutDescription>
+    This page follows the real `examples/web-worker` source structure in this
+    repository. The main page is the Injector, and the worker is the Provider.
+  </CalloutDescription>
+</Callout>
+
+## Source
+
+- [View source on GitHub](https://github.com/molvqingtai/comctx/tree/master/examples/web-worker)
+
+## File layout
+
+The real example is organized like this:
+
+<Files>
+  <Folder name="src" defaultOpen>
+    <File name="main.ts" />
+    <File name="worker.ts" />
+    <Folder name="service" defaultOpen>
+      <File name="adapter.ts" />
+      <File name="counter.ts" />
+    </Folder>
+    <Folder name="utils" defaultOpen>
+      <File name="createElement.ts" />
+    </Folder>
+    <File name="style.css" />
+    <File name="vite.env.d.ts" />
+  </Folder>
+</Files>
+
+<Steps>
+  <Step>
+    ## Installation
+
+    Install `comctx` in your project:
+
+    <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+      <Tab value="pnpm">
+        ```bash
+        pnpm add comctx
+        ```
+      </Tab>
+      <Tab value="npm">
+        ```bash
+        npm install comctx
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        yarn add comctx
+        ```
+      </Tab>
+      <Tab value="bun">
+        ```bash
+        bun add comctx
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step>
+    ## Create the shared service
+
+    The real example keeps the service definition in `service/counter.ts`:
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <File name="counter.ts" />
+      </Folder>
+    </Files>
+
+    ```ts title="counter.ts"
+    import { defineProxy } from 'comctx'
+
+    export class Counter {
+      private value: number
+      constructor(initialValue: number = 0) {
+        this.value = initialValue
+      }
+      async getValue() {
+        return this.value
+      }
+      async onChange(callback: (value: number) => void) {
+        let oldValue = this.value
+        setInterval(() => {
+          const newValue = this.value
+          if (oldValue !== newValue) {
+            callback(newValue)
+            oldValue = newValue
+          }
+        })
+      }
+      async increment() {
+        return ++this.value
+      }
+      async decrement() {
+        return --this.value
+      }
+    }
+
+    export const [provideCounter, injectCounter] = defineProxy(
+      (initialValue: number = 0) => new Counter(initialValue),
+      {
+        namespace: '__web-worker-example__'
+      },
+    )
+    ```
+
+    This file does two things:
+
+    - defines the real `Counter` service
+    - exports both `provideCounter` and `injectCounter`
+
+    <Callout type="info">
+      <CalloutTitle>Real example detail</CalloutTitle>
+      <CalloutDescription>
+        Unlike the simplified docs version, the real example supports an
+        `initialValue` argument and exposes `onChange` for callback-based updates.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the adapters
+
+    The real example keeps both adapters in the same file: `service/adapter.ts`.
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <File name="adapter.ts" />
+      </Folder>
+    </Files>
+
+    <Tabs items={['ProvideAdapter', 'InjectAdapter']}>
+      <Tab value="ProvideAdapter">
+        ```ts title="adapter.ts"
+        import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+        declare const self: DedicatedWorkerGlobalScope
+
+        export class ProvideAdapter implements Adapter {
+          sendMessage: SendMessage = (message) => {
+            self.postMessage(message)
+          }
+          onMessage: OnMessage = (callback) => {
+            const handler = (event: MessageEvent) => callback(event.data)
+            self.addEventListener('message', handler)
+            return () => self.removeEventListener('message', handler)
+          }
+        }
+        ```
+      </Tab>
+      <Tab value="InjectAdapter">
+        ```ts title="adapter.ts"
+        import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+        export class InjectAdapter implements Adapter {
+          worker: Worker
+          constructor(path: string | URL) {
+            this.worker = new Worker(path, { type: 'module' })
+          }
+          sendMessage: SendMessage = (message) => {
+            this.worker.postMessage(message)
+          }
+          onMessage: OnMessage = (callback) => {
+            const handler = (event: MessageEvent) => callback(event.data)
+            this.worker.addEventListener('message', handler)
+            return () => this.worker.removeEventListener('message', handler)
+          }
+        }
+        ```
+      </Tab>
+    </Tabs>
+
+    The worker-side adapter:
+
+    - sends messages with `self.postMessage`
+    - listens on `self`
+
+    The main-page adapter:
+
+    - creates the worker instance internally
+    - sends messages through `this.worker.postMessage`
+    - listens on the `Worker` instance
+
+    <Callout type="warning">
+      <CalloutTitle>Real example detail</CalloutTitle>
+      <CalloutDescription>
+        In this repository, the Injector adapter owns worker creation. That is
+        different from the earlier abstract docs version where worker creation
+        lived directly in `main.ts`.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the worker entry
+
+    The worker entry lives in `worker.ts`:
+
+    <Files>
+      <File name="worker.ts" />
+    </Files>
+
+    ```ts title="worker.ts"
+    import { ProvideAdapter } from './service/adapter'
+    import { provideCounter } from './service/counter'
+
+    const counter = provideCounter(new ProvideAdapter())
+
+    counter.onChange((value) => {
+      console.log('WebWorker Value:', value)
+    })
+    ```
+
+    This is the Provider side. It owns the real implementation and handles
+    incoming remote calls inside the worker.
+  </Step>
+
+  <Step>
+    ## Create the main page entry
+
+    The main page entry lives in `main.ts`:
+
+    <Files>
+      <File name="main.ts" />
+    </Files>
+
+    ```ts title="main.ts"
+    import { name, description } from '../package.json'
+
+    import createElement from './utils/createElement'
+
+    import { InjectAdapter } from './service/adapter'
+    import { injectCounter } from './service/counter'
+    import './style.css'
+
+    void (async () => {
+      const counter = injectCounter(
+        new InjectAdapter(new URL('./worker.ts', import.meta.url)),
+      )
+
+      const initValue = await counter.getValue()
+
+      document.querySelector<HTMLDivElement>('#app')!.appendChild(
+        createElement(`
+          <div>
+            <h1>${name}</h1>
+            <p>${description}</p>
+            <div class="card">
+              <button id="decrement" type="button">-</button>
+              <div id="value">${initValue}</div>
+              <button id="increment" type="button">+</button>
+            </div>
+            <div class="card">
+              <h4 id="worker-value">WebWorker Value: ${initValue} </h4>
+            </div>
+          </div>
+        `),
+      )
+
+      document
+        .querySelector<HTMLButtonElement>('#decrement')!
+        .addEventListener('click', async () => {
+          await counter.decrement()
+        })
+
+      document
+        .querySelector<HTMLButtonElement>('#increment')!
+        .addEventListener('click', async () => {
+          await counter.increment()
+        })
+
+      counter.onChange((value) => {
+        document.querySelector<HTMLDivElement>('#value')!.textContent =
+          value.toString()
+        document.querySelector<HTMLDivElement>('#worker-value')!.textContent =
+          `WebWorker Value: ${value}`
+      })
+    })().catch(console.error)
+    ```
+
+    The main page does not receive the real object.
+
+    It receives a proxy that:
+
+    - turns method calls into messages
+    - sends them through the worker adapter
+    - waits for the worker to execute the real method
+    - resolves the result asynchronously
+    - supports callback-based updates through `onChange`
+  </Step>
+
+  <Step>
+    ## Understand the real flow
+
+    Once everything is connected, the real example works like this:
+
+    1. `main.ts` creates an `InjectAdapter` with `new URL('./worker.ts', import.meta.url)`
+    2. `injectCounter()` returns a proxy object
+    3. button clicks call `counter.increment()` or `counter.decrement()`
+    4. Comctx turns those calls into messages
+    5. the worker receives them through `ProvideAdapter`
+    6. the real `Counter` instance updates its internal value
+    7. `onChange` callbacks update both the worker log and the main-page UI
+  </Step>
+
+  <Step>
+    ## Finish
+
+    A working setup should satisfy all of these:
+
+    - `main.ts` and `worker.ts` use the same `namespace`
+    - the worker entry initializes `provideCounter(new ProvideAdapter())`
+    - the main page injects through `new InjectAdapter(new URL('./worker.ts', import.meta.url))`
+    - both adapters forward messages correctly
+    - callback updates from `onChange` reach the main page
+
+    <Callout type="info">
+      <CalloutTitle>Why this example matters</CalloutTitle>
+      <CalloutDescription>
+        This example shows that Comctx is not limited to simple request/response
+        calls. The real repository example also demonstrates callback-based
+        updates across the worker boundary.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+</Steps>
+
+## Next steps
+
+After this page, continue with:
+
+- [Getting Started](/docs/introduction/getting-started)
+- [Adapter Guide](/docs/guides/adapter)
+- [Browser Extension](/docs/examples/browser-extension)
+- [Iframe](/docs/examples/iframe)

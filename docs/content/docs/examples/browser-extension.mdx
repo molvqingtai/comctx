@@ -1,0 +1,707 @@
+---
+title: Browser Extension
+description: Build a Comctx connection across injected script, content script, background, and popup using the real example file layout.
+icon: Puzzle
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import {
+  Callout,
+  CalloutTitle,
+  CalloutDescription,
+} from 'fumadocs-ui/components/callout'
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+import { Files, File, Folder } from 'fumadocs-ui/components/files'
+
+## Example setup
+
+This example uses a WXT-based browser extension project.
+
+It includes:
+
+- a background entry
+- a content script entry
+- an injected script bridge
+- a popup page
+
+<Callout type="info">
+  <CalloutTitle>What this page covers</CalloutTitle>
+  <CalloutDescription>
+    This page follows the real browser extension example in this repository.
+    The communication flow is:
+    injected script ⇆ content script ⇆ background ⇆ popup page.
+  </CalloutDescription>
+</Callout>
+
+## Source
+
+- [View source on GitHub](https://github.com/molvqingtai/comctx/tree/master/examples/browser-extension)
+
+## File layout
+
+<Files>
+  <File name="wxt.config.ts" />
+  <Folder name="src" defaultOpen>
+    <Folder name="app" defaultOpen>
+      <Folder name="background" defaultOpen>
+        <File name="index.ts" />
+      </Folder>
+      <Folder name="content.content" defaultOpen>
+        <File name="index.ts" />
+      </Folder>
+      <Folder name="injected.content" defaultOpen>
+        <File name="index.ts" />
+      </Folder>
+      <Folder name="popup" defaultOpen>
+        <File name="index.html" />
+        <File name="main.ts" />
+      </Folder>
+    </Folder>
+    <Folder name="service" defaultOpen>
+      <Folder name="adapter" defaultOpen>
+        <File name="browserRuntime.ts" />
+        <File name="customEvent.ts" />
+      </Folder>
+      <Folder name="counter" defaultOpen>
+        <File name="index.ts" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+<Steps>
+  <Step>
+    ## Installation
+
+    The real example depends on both `comctx` and `wxt`.
+
+    <Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+      <Tab value="pnpm">
+        ```bash
+        pnpm add comctx
+        pnpm add -D wxt
+        ```
+      </Tab>
+      <Tab value="npm">
+        ```bash
+        npm install comctx
+        npm install -D wxt
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        yarn add comctx
+        yarn add -D wxt
+        ```
+      </Tab>
+      <Tab value="bun">
+        ```bash
+        bun add comctx
+        bun add -d wxt
+        ```
+      </Tab>
+    </Tabs>
+
+    The example package in this repository also uses:
+
+    - `wxt prepare` in `postinstall`
+    - `wxt` for local development
+    - `wxt build` for production builds
+  </Step>
+
+  <Step>
+    ## Configure WXT
+
+    The real example uses `wxt.config.ts`:
+
+    <Files>
+      <File name="wxt.config.ts" />
+    </Files>
+
+    ```ts title="wxt.config.ts"
+    import { defineConfig } from 'wxt'
+    import path from 'node:path'
+    import { name } from './package.json'
+
+    export default defineConfig({
+      srcDir: path.resolve('src'),
+      entrypointsDir: 'app',
+      imports: false,
+      webExt: {
+        startUrls: ['https://www.example.com/']
+      },
+      manifest: () => {
+        return {
+          name: name,
+          permissions: ['tabs', 'webNavigation']
+        }
+      }
+    })
+    ```
+
+    This configuration is what makes the example's `src/app/*` entrypoints work as a WXT extension project.
+  </Step>
+
+  <Step>
+    ## Create the shared service
+
+    The real example keeps the service implementation in `service/counter/index.ts`.
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <Folder name="counter" defaultOpen>
+          <File name="index.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="service/counter/index.ts"
+    export class Counter {
+      public value: number
+      constructor(initialValue: number = 0) {
+        this.value = initialValue
+      }
+      async getValue() {
+        return this.value
+      }
+      async onChange(callback: (value: number) => void) {
+        let oldValue = this.value
+        setInterval(() => {
+          const newValue = this.value
+          if (oldValue !== newValue) {
+            callback(newValue)
+            oldValue = newValue
+          }
+        })
+      }
+      async increment() {
+        return ++this.value
+      }
+      async decrement() {
+        return --this.value
+      }
+    }
+    ```
+
+    This service is shared conceptually across the extension flow, but each runtime
+    uses its own `defineProxy` call depending on what it exposes or injects.
+
+    <Callout type="info">
+      <CalloutTitle>Real example detail</CalloutTitle>
+      <CalloutDescription>
+        The repository example does not export one shared `defineProxy` pair from
+        this file. Instead, each runtime defines its own proxy boundary using the
+        same service type or implementation where appropriate.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the browser runtime adapter
+
+    The background, content script, and popup communicate through the browser
+    runtime adapter in `service/adapter/browserRuntime.ts`.
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <Folder name="adapter" defaultOpen>
+          <File name="browserRuntime.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="service/adapter/browserRuntime.ts"
+    import { browser } from '#imports'
+    import type { Adapter, Message, SendMessage, OnMessage } from 'comctx'
+
+    export interface MessageMeta {
+      url: string
+      injector?: 'content' | 'popup'
+    }
+
+    export class ProvideAdapter implements Adapter<MessageMeta> {
+      sendMessage: SendMessage<MessageMeta> = async (message) => {
+        switch (message.meta.injector) {
+          case 'content': {
+            const tabs = await browser.tabs.query({ url: message.meta.url })
+            tabs.map((tab) => browser.tabs.sendMessage(tab.id!, message))
+            break
+          }
+          case 'popup': {
+            await browser.runtime.sendMessage(message).catch((error) => {
+              if (error.message.includes('Receiving end does not exist')) {
+                return
+              }
+              throw error
+            })
+            break
+          }
+        }
+      }
+
+      onMessage: OnMessage<MessageMeta> = (callback) => {
+        const handler = (message?: Partial<Message<MessageMeta>>) => {
+          callback(message)
+        }
+        browser.runtime.onMessage.addListener(handler)
+        return () => browser.runtime.onMessage.removeListener(handler)
+      }
+    }
+
+    export class InjectAdapter implements Adapter<MessageMeta> {
+      injector?: 'content' | 'popup'
+      constructor(injector?: 'content' | 'popup') {
+        this.injector = injector
+      }
+      sendMessage: SendMessage<MessageMeta> = (message) => {
+        browser.runtime.sendMessage(browser.runtime.id, {
+          ...message,
+          meta: { url: document.location.href, injector: this.injector }
+        })
+      }
+      onMessage: OnMessage<MessageMeta> = (callback) => {
+        const handler = (message?: Partial<Message<MessageMeta>>) => {
+          callback(message)
+        }
+        browser.runtime.onMessage.addListener(handler)
+        return () => browser.runtime.onMessage.removeListener(handler)
+      }
+    }
+    ```
+
+    This is one of the most important differences from a simplified extension
+    example:
+
+    - the metadata includes both `url` and `injector`
+    - the background routes responses differently for content and popup
+    - popup delivery may fail when the popup is closed, and the example handles that case
+
+    <Callout type="warning">
+      <CalloutTitle>Why the metadata matters</CalloutTitle>
+      <CalloutDescription>
+        The real example is not just content script ⇆ background. It supports
+        both content and popup injectors, so the adapter needs routing metadata
+        to know where responses should go.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the custom event adapter
+
+    The injected script cannot talk to the isolated content script through the
+    browser runtime directly, so the example uses a DOM event bridge in
+    `service/adapter/customEvent.ts`.
+
+    <Files>
+      <Folder name="service" defaultOpen>
+        <Folder name="adapter" defaultOpen>
+          <File name="customEvent.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="service/adapter/customEvent.ts"
+    import type { Adapter, Message, OnMessage, SendMessage } from 'comctx'
+
+    export class ProvideAdapter implements Adapter {
+      sendMessage: SendMessage = (message) => {
+        const detail =
+          typeof cloneInto === 'function'
+            ? cloneInto(message, document.defaultView)
+            : message
+
+        document.dispatchEvent(new CustomEvent('message', { detail }))
+      }
+
+      onMessage: OnMessage = (callback) => {
+        const handler = (event: Event) => {
+          callback((event as CustomEvent<Partial<Message> | undefined>).detail)
+        }
+        document.addEventListener('message', handler)
+        return () => document.removeEventListener('message', handler)
+      }
+    }
+
+    export const InjectAdapter = ProvideAdapter
+    ```
+
+    This adapter is the bridge between:
+
+    - injected script
+    - content script
+
+    It uses DOM events instead of browser runtime messaging.
+
+    <Callout type="info">
+      <CalloutTitle>Firefox compatibility</CalloutTitle>
+      <CalloutDescription>
+        The real example uses `cloneInto` when available so the custom event
+        payload can work correctly in Firefox.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+
+  <Step>
+    ## Create the background entry
+
+    The background script owns the real `Counter` implementation and exposes it
+    through a provider.
+
+    <Files>
+      <Folder name="app" defaultOpen>
+        <Folder name="background" defaultOpen>
+          <File name="index.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="app/background/index.ts"
+    import { browser, defineBackground } from '#imports'
+    import { Counter } from '@/service/counter'
+
+    import { ProvideAdapter } from '@/service/adapter/browserRuntime'
+    import { defineProxy } from 'comctx'
+
+    export default defineBackground({
+      type: 'module',
+      main() {
+        browser.webNavigation.onHistoryStateUpdated.addListener(() => {
+          console.log('background active')
+        })
+
+        const [provideBackgroundCounter] = defineProxy(
+          (initialValue: number) => new Counter(initialValue),
+          {
+            namespace: browser.runtime.id
+          }
+        )
+
+        const counter = provideBackgroundCounter(new ProvideAdapter(), 0)
+
+        counter.onChange((value) => {
+          console.log('background Value:', value)
+        })
+      }
+    })
+    ```
+
+    Important details from the real example:
+
+    - the namespace is `browser.runtime.id`
+    - the provider accepts an initial value
+    - the background keeps itself active with a navigation listener
+    - the background logs `onChange` updates from the real service
+  </Step>
+
+  <Step>
+    ## Create the content script entry
+
+    The isolated content script injects the background service through the
+    browser runtime adapter, then re-exposes that proxy to the injected script
+    through the custom event adapter.
+
+    <Files>
+      <Folder name="app" defaultOpen>
+        <Folder name="content.content" defaultOpen>
+          <File name="index.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="app/content.content/index.ts"
+    import { name } from '@/../package.json'
+    import { browser, createShadowRootUi, defineContentScript } from '#imports'
+    import createElement from '@/utils/createElement'
+    import '@/assets/style.css'
+
+    import { defineProxy } from 'comctx'
+    import { InjectAdapter as BrowserRuntimeInjectAdapter } from '@/service/adapter/browserRuntime'
+    import { ProvideAdapter as CustomEventProvideAdapter } from '@/service/adapter/customEvent'
+    import type { Counter } from '@/service/counter'
+
+    export default defineContentScript({
+      world: 'ISOLATED',
+      matches: ['*://*.example.com/*'],
+      runAt: 'document_end',
+      cssInjectionMode: 'ui',
+      async main(ctx) {
+        const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
+          namespace: browser.runtime.id
+        })
+
+        const counter = injectBackgroundCounter(
+          new BrowserRuntimeInjectAdapter('content')
+        )
+
+        const [provideContentCounter] = defineProxy(() => counter, {
+          namespace: '__comctx-example__'
+        })
+
+        provideContentCounter(new CustomEventProvideAdapter())
+
+        const ui = await createShadowRootUi(ctx, {
+          name,
+          position: 'inline',
+          anchor: 'body',
+          append: 'last',
+          mode: 'open',
+          inheritStyles: true,
+          onMount: async (container) => {
+            const initValue = await counter.getValue()
+
+            const app = createElement(`
+              <div id="app" class="content-app">
+                <h1>content-script example</h1>
+                <p>content-script -> background</p>
+                <div class="card">
+                  <button id="decrement" type="button">-</button>
+                    <div id="value">${initValue}</div>
+                  <button id="increment" type="button">+</button>
+                </div>
+                <div class="card">
+                  <h4 id="background-value">Background Value: ${initValue} </h4>
+                </div>
+              </div>`)
+
+            app.querySelector<HTMLButtonElement>('#decrement')!
+              .addEventListener('click', async () => {
+                await counter.decrement()
+              })
+
+            app.querySelector<HTMLButtonElement>('#increment')!
+              .addEventListener('click', async () => {
+                await counter.increment()
+              })
+
+            counter.onChange((value) => {
+              app.querySelector<HTMLDivElement>('#value')!.textContent =
+                value.toString()
+              app.querySelector<HTMLDivElement>('#background-value')!.textContent =
+                `Background Value: ${value}`
+            })
+
+            container.append(app)
+          }
+        })
+
+        ui.mount()
+      }
+    })
+    ```
+
+    This is the bridge layer in the real example:
+
+    - inject background counter from the browser runtime
+    - expose that counter again to the injected script
+    - render a UI in the isolated world
+  </Step>
+
+  <Step>
+    ## Create the injected script entry
+
+    The injected script runs in the page world and talks to the content script
+    through the custom event adapter.
+
+    <Files>
+      <Folder name="app" defaultOpen>
+        <Folder name="injected.content" defaultOpen>
+          <File name="index.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="app/injected.content/index.ts"
+    import { defineContentScript } from '#imports'
+
+    import createElement from '@/utils/createElement'
+    import { InjectAdapter as CustomEventInjectAdapter } from '@/service/adapter/customEvent'
+    import '@/assets/style.css'
+
+    import { defineProxy } from 'comctx'
+    import type { Counter } from '@/service/counter'
+
+    export default defineContentScript({
+      world: 'MAIN',
+      runAt: 'document_end',
+      matches: ['*://*.example.com/*'],
+      main: async () => {
+        document.head.querySelectorAll('style').forEach((style) => style.remove())
+        document.body.querySelector('div')?.remove()
+
+        const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
+          namespace: '__comctx-example__'
+        })
+
+        const counter = injectContentCounter(new CustomEventInjectAdapter())
+
+        const initValue = await counter.getValue()
+
+        const app = createElement(`
+          <div id="app" class="injected-app">
+            <h1>injected-script example</h1>
+            <p>injected-script -> content-script -> background</p>
+            <div class="card">
+              <button id="decrement" type="button">-</button>
+                <div id="value">${initValue}</div>
+              <button id="increment" type="button">+</button>
+            </div>
+            <div class="card">
+              <h4 id="background-value">Background Value: ${initValue} </h4>
+            </div>
+          </div>`)
+
+        app.querySelector<HTMLButtonElement>('#decrement')!
+          .addEventListener('click', async () => {
+            await counter.decrement()
+          })
+
+        app.querySelector<HTMLButtonElement>('#increment')!
+          .addEventListener('click', async () => {
+            await counter.increment()
+          })
+
+        counter.onChange((value) => {
+          app.querySelector<HTMLDivElement>('#value')!.textContent =
+            value.toString()
+          app.querySelector<HTMLDivElement>('#background-value')!.textContent =
+            `Background Value: ${value}`
+        })
+
+        document.body.append(app)
+      }
+    })
+    ```
+
+    This is what makes the full chain possible:
+
+    - injected script ⇆ content script through custom events
+    - content script ⇆ background through browser runtime messaging
+  </Step>
+
+  <Step>
+    ## Create the popup entry
+
+    The popup page also injects the background service, but it uses the browser
+    runtime adapter with `injector: 'popup'`.
+
+    <Files>
+      <Folder name="app" defaultOpen>
+        <Folder name="popup" defaultOpen>
+          <File name="main.ts" />
+        </Folder>
+      </Folder>
+    </Files>
+
+    ```ts title="app/popup/main.ts"
+    import { browser } from '#imports'
+    import { defineProxy } from 'comctx'
+    import { InjectAdapter as BrowserRuntimeInjectAdapter } from '@/service/adapter/browserRuntime'
+    import type { Counter } from '@/service/counter'
+    import createElement from '@/utils/createElement'
+
+    void (async () => {
+      const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
+        namespace: browser.runtime.id
+      })
+
+      const counter = injectBackgroundCounter(
+        new BrowserRuntimeInjectAdapter('popup')
+      )
+
+      const initValue = await counter.getValue()
+
+      document.querySelector<HTMLDivElement>('#root')!.replaceWith(
+        createElement(`
+          <div id="app" class="popup-app">
+            <h1>popup-page example</h1>
+            <p>popup-page -> background</p>
+            <div class="card">
+              <button id="decrement" type="button">-</button>
+                <div id="value">${initValue}</div>
+              <button id="increment" type="button">+</button>
+            </div>
+            <div class="card">
+              <h4 id="background-value">Background Value: ${initValue} </h4>
+            </div>
+          </div>
+        `)
+      )
+
+      document.querySelector<HTMLButtonElement>('#decrement')!
+        .addEventListener('click', async () => {
+          await counter.decrement()
+        })
+
+      document.querySelector<HTMLButtonElement>('#increment')!
+        .addEventListener('click', async () => {
+          await counter.increment()
+        })
+
+      counter.onChange((value) => {
+        document.querySelector<HTMLDivElement>('#value')!.textContent =
+          value.toString()
+        document.querySelector<HTMLDivElement>('#background-value')!.textContent =
+          `Background Value: ${value}`
+      })
+    })().catch(console.error)
+    ```
+
+    The popup is not part of the page bridge. It talks directly to the
+    background through the browser runtime adapter.
+  </Step>
+
+  <Step>
+    ## Finish
+
+    The real example flow is:
+
+    1. the background owns the real `Counter`
+    2. the content script injects the background counter through browser runtime messaging
+    3. the content script re-exposes that proxy to the injected script through custom events
+    4. the popup injects the background counter directly through browser runtime messaging
+
+    A working setup should satisfy all of these:
+
+    - the background uses `browser.runtime.id` as its namespace
+    - the content script injects with `InjectAdapter('content')`
+    - the popup injects with `InjectAdapter('popup')`
+    - the content script re-exposes the proxy with namespace `__comctx-example__`
+    - the injected script uses the custom event adapter
+    - the background routes responses based on `message.meta.injector`
+
+    <Callout type="warning">
+      <CalloutTitle>This example is more than content ⇆ background</CalloutTitle>
+      <CalloutDescription>
+        The real repository example demonstrates two different transport layers:
+        browser runtime messaging and DOM custom events. The docs should reflect
+        that full chain, not a simplified two-context version.
+      </CalloutDescription>
+    </Callout>
+  </Step>
+</Steps>
+
+## Run the example
+
+The real example package uses WXT scripts:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+It also includes:
+
+- `pnpm dev:firefox`
+- `pnpm build`
+- `pnpm build:firefox`
+- `pnpm zip`
+- `pnpm zip:firefox`
+
+## Next steps
+
+After this page, continue with:
+
+- [Web Worker](/docs/examples/web-worker)
+- [Iframe](/docs/examples/iframe)
+- [Comlink-like API](/docs/guides/comlink-like)

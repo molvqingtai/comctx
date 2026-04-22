@@ -1,0 +1,183 @@
+---
+title: Advanced Usage
+description: Advanced patterns from the README, including split definitions, transfer, and Comlink-style wrappers.
+icon: Blocks
+---
+
+## Separate Inject and Provide Definitions
+
+For multi-package architectures, you can define inject and provide proxies separately to avoid bundling shared code in both packages.
+
+By default, both provider and injector would bundle the same implementation code, but the injector only needs it for type safety.
+
+### Provider side
+
+```ts title="index.ts"
+import { defineProxy } from 'comctx'
+import { Counter } from './shared'
+
+export const [provideCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__'
+})
+```
+
+### Injector side
+
+```ts title="index.ts"
+import { defineProxy } from 'comctx'
+import type { Counter } from './shared'
+
+// Since the injector side is a virtual proxy that doesn't actually run, we can pass an empty object
+export const [, injectCounter] = defineProxy(() => ({}) as Counter, {
+  namespace: '__comctx-example__'
+})
+```
+
+## Transfer and Transferable Objects
+
+By default, every method parameter, return value and object property value is copied using [structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
+
+Comctx performs no internal serialization and natively supports [transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects).
+
+If you want a value to be transferred rather than copied — provided the value is or contains a [Transferable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects#supported_objects) — you can enable the `transfer` option. When enabled, transferable objects are automatically extracted and transferred using zero-copy semantics:
+
+```ts title="ai.ts"
+import { defineProxy } from 'comctx'
+import { streamText } from 'ai'
+import { openai } from '@ai-sdk/openai'
+
+class AiService {
+  async translate(text: string, targetLanguage: string) {
+    const result = await streamText({
+      model: openai('gpt-4o-mini'),
+      prompt: `Translate to ${targetLanguage}:\n${text}`
+    })
+    return result.textStream
+  }
+}
+
+export const [provideAi, injectAi] = defineProxy(() => new AiService(), {
+  namespace: '__worker-transfer-example__',
+  transfer: true
+})
+
+const ai = injectAi(adapter)
+const stream = await ai.translate('Hello world', 'zh-CN')
+
+for await (const chunk of stream) {
+  console.log(chunk)
+}
+```
+
+### Adapter Implementation
+
+When transfer is enabled, transferable objects are automatically extracted from messages and passed as the `transfer` parameter to `SendMessage`.
+
+```ts title="adapter.ts"
+import type { Adapter, SendMessage } from 'comctx'
+
+export default class TransferAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+  // ... rest of implementation
+}
+```
+
+## Prefer comlink-style APIs? Or migrating from Comlink?
+
+[Comctx](https://github.com/molvqingtai/comctx)'s API design makes it easy to build your own layer with an API similar to [Comlink](https://github.com/GoogleChromeLabs/comlink). The following example is inspired by [`@wordpress/worker-threads`](https://github.com/WordPress/gutenberg/tree/trunk/packages/worker-threads):
+
+### `comlink.ts`
+
+```ts title="comlink.ts"
+import {
+  defineProxy,
+  type Adapter,
+  type OnMessage,
+  type SendMessage
+} from 'comctx'
+
+class WorkerInjectAdapter implements Adapter {
+  constructor(private worker: Worker) {}
+
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    this.worker.addEventListener('message', handler)
+    return () => this.worker.removeEventListener('message', handler)
+  }
+}
+
+class WorkerProvideAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    self.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    self.addEventListener('message', handler)
+    return () => self.removeEventListener('message', handler)
+  }
+}
+
+export function wrap<T extends object>(worker: Worker) {
+  const [, inject] = defineProxy(() => ({}) as T, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true
+  })
+
+  return inject(new WorkerInjectAdapter(worker))
+}
+
+export function expose<T extends object>(target: T) {
+  const [provide] = defineProxy(() => target, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true
+  })
+
+  provide(new WorkerProvideAdapter())
+}
+```
+
+### `worker.ts`
+
+```ts title="worker.ts"
+import { expose } from './comlink'
+
+const api = {
+  async increment(value: number) {
+    return value + 1
+  }
+}
+
+expose(api)
+
+export type WorkerAPI = typeof api
+```
+
+### `main.ts`
+
+```ts title="main.ts"
+import { wrap } from './comlink'
+import type { WorkerAPI } from './worker'
+
+const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+  type: 'module'
+})
+
+const api = wrap<WorkerAPI>(worker)
+
+console.log(await api.increment(1))
+```
+
+## Next steps
+
+- **Transfer**
+- **API Reference**
+- **Examples**

@@ -1,0 +1,107 @@
+---
+title: Transferable Objects
+description: Use transferable objects with Comctx when you want values to be transferred instead of copied.
+icon: ArrowRightLeft
+---
+
+Comctx supports [transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects) natively.
+
+By default, every method parameter, return value, and object property value is copied through [structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
+
+If you want a value to be transferred rather than copied — provided the value is or contains a [transferable object](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects#supported_objects) — enable the `transfer` option.
+
+## Supported transferable objects
+
+Use the MDN page for [Transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects) as the authoritative list.
+
+The MDN page lists the following supported objects (the list may not be exhaustive):
+
+- `ArrayBuffer`
+- `AudioData`
+- `ImageBitmap`
+- `MediaSourceHandle`
+- `MediaStreamTrack`
+- `MessagePort`
+- `MIDIAccess`
+- `OffscreenCanvas`
+- `ReadableStream`
+- `RTCDataChannel`
+- `TransformStream`
+- `VideoFrame`
+- `WebTransportReceiveStream`
+- `WebTransportSendStream`
+- `WritableStream`
+
+Support depends on the runtime and platform, so check the MDN page for the current details.
+
+## How transfer works
+
+When `transfer: true` is enabled, Comctx automatically extracts transferable objects from messages and passes them to your adapter through the `transfer` parameter.
+
+This allows zero-copy transfer when the runtime and transport both support it.
+
+## Enable `transfer`
+
+```ts
+import { defineProxy } from 'comctx'
+import { streamText } from 'ai'
+import { openai } from '@ai-sdk/openai'
+
+class AiService {
+  async translate(text: string, targetLanguage: string) {
+    const result = await streamText({
+      model: openai('gpt-4o-mini'),
+      prompt: `Translate to ${targetLanguage}:\n${text}`,
+    })
+
+    return result.textStream
+  }
+}
+
+export const [provideAi, injectAi] = defineProxy(() => new AiService(), {
+  namespace: '__worker-transfer-example__',
+  transfer: true,
+})
+```
+
+In this example, `result.textStream` is a `ReadableStream`, which can be transferred when `transfer: true` is enabled.
+
+## Usage
+
+```ts
+const ai = injectAi(adapter)
+const stream = await ai.translate('Hello world', 'zh-CN')
+
+for await (const chunk of stream) {
+  console.log(chunk)
+}
+```
+
+## Adapter implementation
+
+When transfer is enabled, your adapter must forward the `transfer` parameter to the underlying transport.
+
+```ts
+import type { Adapter, SendMessage } from 'comctx'
+
+export default class TransferAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+
+  // ... rest of implementation
+}
+```
+
+## Important note
+
+[`AsyncIterable`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncIterator) is not transferable and cannot be sent across workers.
+
+If you need to return or send stream-like output across a worker boundary, wrap it with [`ReadableStream.from(...)`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static) so it can be transferred.
+
+## Next steps
+
+- [Separate Definitions](/docs/guides/separate-definitions)
+- [Comlink-like API](/docs/guides/comlink-like)
+- [API Reference](/docs/reference/api-reference)
+- [Examples](/docs/examples)

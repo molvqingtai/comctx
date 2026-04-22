@@ -1,0 +1,249 @@
+---
+title: Adapter Guide
+description: Implement the adapter interface for Comctx communication channels.
+icon: PlugZap
+---
+
+An adapter lets Comctx work across different communication channels.
+
+To adapt Comctx to a specific environment, implement the following interface:
+
+```ts
+interface Adapter<T extends MessageMeta = MessageMeta> {
+  /** Send a message to the other side */
+  sendMessage: (message: Message<T>, transfer: Transferable[]) => MaybePromise<void>
+
+  /** Register a message listener */
+  onMessage: (callback: (message?: Partial<Message<T>>) => void) => MaybePromise<OffMessage | void>
+}
+```
+
+## What an adapter does
+
+An adapter has two responsibilities:
+
+- send messages to the other side
+- register a listener for incoming messages
+
+This is what makes Comctx work across environments such as:
+
+- Web Workers
+- Browser Extensions
+- iframes
+- Electron
+- other JavaScript runtimes with message-based communication
+
+## Minimal adapter
+
+A minimal adapter looks like this:
+
+```ts title="adapter.ts"
+import type { Adapter, SendMessage, OnMessage } from 'comctx'
+
+export default class CustomAdapter implements Adapter {
+  sendMessage: SendMessage = (message) => {
+    postMessage(message)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    addEventListener('message', handler)
+    return () => removeEventListener('message', handler)
+  }
+}
+```
+
+## `sendMessage`
+
+`sendMessage` is responsible for delivering the outgoing message to the other side.
+
+```ts
+sendMessage: (message, transfer) => {
+  postMessage(message, transfer)
+}
+```
+
+When transfer is enabled, transferable objects are automatically extracted from messages and passed as the `transfer` parameter.
+
+## `onMessage`
+
+`onMessage` registers a listener for incoming messages.
+
+```ts
+onMessage: (callback) => {
+  const handler = (event: MessageEvent) => callback(event.data)
+  addEventListener('message', handler)
+  return () => removeEventListener('message', handler)
+}
+```
+
+The callback should receive the incoming Comctx message payload.
+
+## Transfer-enabled adapter
+
+When `transfer: true` is enabled, your adapter should forward the `transfer` parameter to the underlying transport.
+
+```ts title="adapter.ts"
+import type { Adapter, SendMessage } from 'comctx'
+
+export default class TransferAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+
+  // ... rest of implementation
+}
+```
+
+## Web Worker example
+
+### Inject adapter
+
+```ts title="InjectAdapter.ts"
+import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+export default class InjectAdapter implements Adapter {
+  worker: Worker
+
+  constructor(path: string | URL) {
+    this.worker = new Worker(path, { type: 'module' })
+  }
+
+  sendMessage: SendMessage = (message) => {
+    this.worker.postMessage(message)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    this.worker.addEventListener('message', handler)
+    return () => this.worker.removeEventListener('message', handler)
+  }
+}
+```
+
+### Provide adapter
+
+```ts title="ProvideAdapter.ts"
+import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+declare const self: DedicatedWorkerGlobalScope
+
+export default class ProvideAdapter implements Adapter {
+  sendMessage: SendMessage = (message) => {
+    self.postMessage(message)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    self.addEventListener('message', handler)
+    return () => self.removeEventListener('message', handler)
+  }
+}
+```
+
+## Browser Extension example
+
+### Inject adapter
+
+```ts title="InjectAdapter.ts"
+import browser from 'webextension-polyfill'
+import { Adapter, Message, SendMessage, OnMessage } from 'comctx'
+
+export interface MessageMeta {
+  url: string
+}
+
+export default class InjectAdapter implements Adapter<MessageMeta> {
+  sendMessage: SendMessage<MessageMeta> = (message) => {
+    browser.runtime.sendMessage(browser.runtime.id, {
+      ...message,
+      meta: { url: document.location.href },
+    })
+  }
+
+  onMessage: OnMessage<MessageMeta> = (callback) => {
+    const handler = (message?: Partial<Message<MessageMeta>>) => {
+      callback(message)
+    }
+    browser.runtime.onMessage.addListener(handler)
+    return () => browser.runtime.onMessage.removeListener(handler)
+  }
+}
+```
+
+### Provide adapter
+
+```ts title="ProvideAdapter.ts"
+import browser from 'webextension-polyfill'
+import { Adapter, Message, SendMessage, OnMessage } from 'comctx'
+
+export interface MessageMeta {
+  url: string
+}
+
+export default class ProvideAdapter implements Adapter<MessageMeta> {
+  sendMessage: SendMessage<MessageMeta> = async (message) => {
+    const tabs = await browser.tabs.query({ url: message.meta.url })
+    tabs.map((tab) => browser.tabs.sendMessage(tab.id!, message))
+  }
+
+  onMessage: OnMessage<MessageMeta> = (callback) => {
+    const handler = (message?: Partial<Message<MessageMeta>>) => {
+      callback(message)
+    }
+    browser.runtime.onMessage.addListener(handler)
+    return () => browser.runtime.onMessage.removeListener(handler)
+  }
+}
+```
+
+## Iframe example
+
+### Inject adapter
+
+```ts title="InjectAdapter.ts"
+import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+export default class InjectAdapter implements Adapter {
+  sendMessage: SendMessage = (message) => {
+    window.postMessage(message, '*')
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }
+}
+```
+
+### Provide adapter
+
+```ts title="ProvideAdapter.ts"
+import { Adapter, SendMessage, OnMessage } from 'comctx'
+
+export default class ProvideAdapter implements Adapter {
+  sendMessage: SendMessage = (message) => {
+    window.parent.postMessage(message, '*')
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    window.parent.addEventListener('message', handler)
+    return () => window.parent.removeEventListener('message', handler)
+  }
+}
+```
+
+## Notes
+
+- `sendMessage` and `onMessage` are the only required adapter methods
+- the adapter should match the communication channel used by your runtime
+- when transfer is enabled, forward the `transfer` parameter
+- `onMessage` should return a cleanup function when possible
+
+## Next steps
+
+- [Getting Started](/docs/introduction/getting-started)
+- [Transferable Objects](/docs/guides/transferable-objects)
+- [Examples](/docs/examples)

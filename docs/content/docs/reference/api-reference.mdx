@@ -1,0 +1,419 @@
+---
+title: API Reference
+description: Reference for `defineProxy`, the adapter interface, and documented Comctx options.
+icon: BookMarked
+---
+
+## `defineProxy`
+
+`defineProxy` creates a Provider/Injector pair for a shared service.
+
+```ts
+import { defineProxy } from 'comctx'
+
+class Counter {
+  public value: number
+
+  constructor(initialValue: number = 0) {
+    this.value = initialValue
+  }
+
+  async getValue() {
+    return this.value
+  }
+
+  async onChange(callback: (value: number) => void) {
+    let oldValue = this.value
+    setInterval(() => {
+      const newValue = this.value
+      if (oldValue !== newValue) {
+        callback(newValue)
+        oldValue = newValue
+      }
+    })
+  }
+
+  async increment() {
+    return ++this.value
+  }
+
+  async decrement() {
+    return --this.value
+  }
+}
+
+export const [provideCounter, injectCounter] = defineProxy(
+  () => new Counter(),
+  {
+    namespace: '__comctx-example__',
+  },
+)
+```
+
+## Provider and Injector
+
+### Provider
+
+The Provider side owns the real service implementation.
+
+```ts
+import CustomAdapter from 'CustomAdapter'
+import { provideCounter } from './shared'
+
+const originCounter = provideCounter(new CustomAdapter())
+
+originCounter.onChange(console.log)
+```
+
+`originCounter` directly references the real `Counter` instance.
+
+Typical Provider environments include:
+
+- web workers
+- background scripts
+- iframe pages
+
+### Injector
+
+The Injector side receives a virtual proxy.
+
+```ts
+import CustomAdapter from 'CustomAdapter'
+import { injectCounter } from './shared'
+
+const proxyCounter = injectCounter(new CustomAdapter())
+
+proxyCounter.onChange(console.log)
+
+await proxyCounter.increment()
+const count = await proxyCounter.getValue()
+```
+
+`proxyCounter` forwards requests to the Provider side.
+
+Typical Injector environments include:
+
+- main pages
+- content scripts
+- host pages
+
+## Important behavior
+
+### Async methods
+
+The Injector side cannot directly use `get` and `set`.  
+It should interact with the remote service through asynchronous methods.
+
+Prefer this:
+
+```ts
+await proxyCounter.increment()
+const count = await proxyCounter.getValue()
+```
+
+Over this:
+
+```ts
+proxyCounter.value
+proxyCounter.value = 1
+```
+
+### Callback support
+
+Callbacks are supported across the boundary.
+
+```ts
+proxyCounter.onChange(console.log)
+```
+
+### `backup`
+
+Because the Injector is a virtual proxy, operations such as `Reflect.has(proxyCounter, 'key')` may need a static template on the Injector side.
+
+You can enable `backup` for that:
+
+```ts
+const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+  backup: true,
+})
+```
+
+## Documented options
+
+## `namespace`
+
+`namespace` identifies the service channel.
+
+```ts
+const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+})
+```
+
+Rules:
+
+- the Provider and Injector must use the same `namespace`
+- different services should use different namespaces
+- examples in this repository use explicit namespace strings such as `__comctx-example__`
+
+## `transfer` / Transferable Objects
+
+By default, method parameters, return values, and object property values are copied with [structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
+
+If you want a value to be transferred rather than copied, you can enable `transfer`, provided the value is or contains a [transferable object](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects#supported_objects).
+
+```ts
+import { defineProxy } from 'comctx'
+import { streamText } from 'ai'
+import { openai } from '@ai-sdk/openai'
+
+class AiService {
+  async translate(text: string, targetLanguage: string) {
+    const result = await streamText({
+      model: openai('gpt-4o-mini'),
+      prompt: `Translate to ${targetLanguage}:\n${text}`,
+    })
+
+    return result.textStream
+  }
+}
+
+export const [provideAi, injectAi] = defineProxy(() => new AiService(), {
+  namespace: '__worker-transfer-example__',
+  transfer: true,
+})
+```
+
+When `transfer` is enabled:
+
+- transferable objects are automatically extracted
+- they are passed to the adapter as the `transfer` argument
+- zero-copy behavior depends on runtime support
+
+Supported transferable objects are listed on MDN:
+
+- [`ArrayBuffer`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)
+- [`AudioData`](https://developer.mozilla.org/en-US/docs/Web/API/AudioData)
+- [`ImageBitmap`](https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap)
+- [`MediaSourceHandle`](https://developer.mozilla.org/en-US/docs/Web/API/MediaSourceHandle)
+- [`MediaStreamTrack`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack)
+- [`MessagePort`](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort)
+- [`MIDIAccess`](https://developer.mozilla.org/en-US/docs/Web/API/MIDIAccess)
+- [`OffscreenCanvas`](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas)
+- [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream)
+- [`RTCDataChannel`](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)
+- [`TransformStream`](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream)
+- [`VideoFrame`](https://developer.mozilla.org/en-US/docs/Web/API/VideoFrame)
+- [`WebTransportReceiveStream`](https://developer.mozilla.org/en-US/docs/Web/API/WebTransportReceiveStream)
+- [`WebTransportSendStream`](https://developer.mozilla.org/en-US/docs/Web/API/WebTransportSendStream)
+- [`WritableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream)
+
+See MDN for the authoritative list of [Transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects). The list may not be exhaustive, and support depends on the runtime and platform.
+
+### Transfer usage
+
+```ts
+const ai = injectAi(adapter)
+const stream = await ai.translate('Hello world', 'zh-CN')
+
+for await (const chunk of stream) {
+  console.log(chunk)
+}
+```
+
+### Transfer-enabled adapter
+
+```ts
+import type { Adapter, SendMessage } from 'comctx'
+
+export default class TransferAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+}
+```
+
+### Transfer note
+
+`AsyncIterable` is not a transferable object and cannot be sent across workers.
+
+Wrap it with [`ReadableStream.from`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static) before returning or sending it so it can be transferred.
+
+## `heartbeatCheck`
+
+`heartbeatCheck` enables a provider readiness check.
+
+```ts
+const [, inject] = defineProxy(() => ({}) as T, {
+  namespace: '__comlink_like__',
+  heartbeatCheck: false,
+  transfer: true,
+})
+```
+
+```ts
+const [provide] = defineProxy(() => target, {
+  namespace: '__comlink_like__',
+  heartbeatCheck: false,
+  transfer: true,
+})
+```
+
+When enabled, the Injector sends heartbeat messages and waits for the Provider to respond before continuing.
+
+This is useful when the Provider side may not be ready immediately, such as:
+
+- asynchronous worker startup
+- iframe loading
+- other cases where the Provider is initialized after the Injector starts
+
+If the Provider does not respond within the configured timeout, the call fails with a provider unavailable error.
+
+## Adapter Interface
+
+To adapt Comctx to different communication channels, implement this interface:
+
+```ts
+interface Adapter<T extends MessageMeta = MessageMeta> {
+  /** Send a message to the other side */
+  sendMessage: (
+    message: Message<T>,
+    transfer: Transferable[],
+  ) => MaybePromise<void>
+
+  /** Register a message listener */
+  onMessage: (
+    callback: (message?: Partial<Message<T>>) => void,
+  ) => MaybePromise<OffMessage | void>
+}
+```
+
+## `sendMessage`
+
+`sendMessage` is responsible for delivering the outgoing message to the other side.
+
+```ts
+sendMessage: (message, transfer) => {
+  postMessage(message, transfer)
+}
+```
+
+Responsibilities:
+
+- send the message to the correct target
+- forward `transfer` when transfer is enabled and supported
+- preserve the message payload shape
+
+## `onMessage`
+
+`onMessage` registers a listener for incoming messages.
+
+```ts
+onMessage: (callback) => {
+  const handler = (event: MessageEvent) => callback(event.data)
+  addEventListener('message', handler)
+  return () => removeEventListener('message', handler)
+}
+```
+
+Responsibilities:
+
+- listen on the correct runtime object
+- forward the incoming payload to `callback`
+- return cleanup logic when possible
+
+## Separate Inject and Provide Definitions
+
+For multi-package architectures, you can define inject and provide proxies separately to avoid bundling shared implementation code in both packages.
+
+### Provider side
+
+```ts
+import { defineProxy } from 'comctx'
+import { Counter } from './shared'
+
+export const [provideCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+})
+```
+
+### Injector side
+
+```ts
+import { defineProxy } from 'comctx'
+import type { Counter } from './shared'
+
+export const [, injectCounter] = defineProxy(() => ({}) as Counter, {
+  namespace: '__comctx-example__',
+})
+```
+
+Since the Injector side is a virtual proxy that does not actually run the implementation, it can pass an empty object cast to the service type.
+
+## Comlink-style wrapper example
+
+Comctx can be used to build a [Comlink](https://github.com/GoogleChromeLabs/comlink)-style wrapper, inspired by [`@wordpress/worker-threads`](https://github.com/WordPress/gutenberg/tree/trunk/packages/worker-threads).
+
+```ts
+import {
+  defineProxy,
+  type Adapter,
+  type OnMessage,
+  type SendMessage,
+} from 'comctx'
+
+class WorkerInjectAdapter implements Adapter {
+  constructor(private worker: Worker) {}
+
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    this.worker.addEventListener('message', handler)
+    return () => this.worker.removeEventListener('message', handler)
+  }
+}
+
+class WorkerProvideAdapter implements Adapter {
+  sendMessage: SendMessage = (message, transfer) => {
+    self.postMessage(message, transfer)
+  }
+
+  onMessage: OnMessage = (callback) => {
+    const handler = (event: MessageEvent) => callback(event.data)
+    self.addEventListener('message', handler)
+    return () => self.removeEventListener('message', handler)
+  }
+}
+
+export function wrap<T extends object>(worker: Worker) {
+  const [, inject] = defineProxy(() => ({}) as T, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true,
+  })
+
+  return inject(new WorkerInjectAdapter(worker))
+}
+
+export function expose<T extends object>(target: T) {
+  const [provide] = defineProxy(() => target, {
+    namespace: '__comlink_like__',
+    heartbeatCheck: false,
+    transfer: true,
+  })
+
+  provide(new WorkerProvideAdapter())
+}
+```
+
+## See also
+
+- [Getting Started](/docs/introduction/getting-started)
+- [Transferable Objects](/docs/guides/transferable-objects)
+- [Separate Definitions](/docs/guides/separate-definitions)
+- [Comlink-like API](/docs/guides/comlink-like)
+- [Examples](/docs/examples)

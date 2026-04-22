@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "pnpm --filter core dev",
     "build": "pnpm --filter core build",
+    "dev:docs": "pnpm --filter docs dev",
     "dev:extension": "pnpm --filter browser-extension-example dev",
     "dev:iframe": "pnpm --filter iframe-example dev",
     "dev:web-worker": "pnpm --filter web-worker-example dev",
@@ -15,6 +16,9 @@
     "dev:worker-transfer": "pnpm --filter worker-transfer-example dev",
     "lint": "npm-run-all -p lint:*",
     "check": "npm-run-all -p check:*",
+    "build:docs": "pnpm --filter docs build",
+    "lint:docs": "pnpm --filter docs lint",
+    "check:docs": "pnpm --filter docs check",
     "test": "pnpm --filter __tests__ test",
     "lint:core": "pnpm --filter core lint",
     "lint:examples": "pnpm --filter browser-extension-example --filter iframe-example --filter web-worker-example --filter shared-worker-example --filter service-worker-example --filter worker-transfer-example lint",
@@ -51,8 +55,8 @@
   },
   "homepage": "https://github.com/molvqingtai/comctx#readme",
   "devDependencies": {
-    "@commitlint/cli": "^20.4.1",
-    "@commitlint/config-conventional": "^20.4.1",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "husky": "^9.1.7",
