@@ -1,3 +1,21 @@
+# [1.7.0](https://github.com/molvqingtai/comctx/compare/v1.6.1...v1.7.0) (2026-06-08)
+
+
+### Bug Fixes
+
+* keep worker flow code cards dark ([ae99897](https://github.com/molvqingtai/comctx/commit/ae9989705baf42b7c86740597ec789ec03500fcb))
+* load jsr release plugin from js config ([217842b](https://github.com/molvqingtai/comctx/commit/217842b7f08fa30ec03db81f394d740246acac29))
+* pin semantic-release jsr plugin ([66fa7ec](https://github.com/molvqingtai/comctx/commit/66fa7ece3207789d304edb02760a80413603f234))
+* preserve docs base path in home link ([b86efff](https://github.com/molvqingtai/comctx/commit/b86effff9b29c08c58bdf4dcc3f1b73c1c388661))
+* prevent worker flow cards from overflowing ([371501a](https://github.com/molvqingtai/comctx/commit/371501ab8952f551b7bf220837788fe07216c3aa))
+* use github token for release git auth ([e2db4a5](https://github.com/molvqingtai/comctx/commit/e2db4a513e736ab842b906ea719bb61ac083cb8e))
+
+
+### Features
+
+* add adapter sender names ([3417397](https://github.com/molvqingtai/comctx/commit/3417397236e7f4cde0677fb320fc972b8f1e9bb1))
+* add debug adapter logging ([23780a1](https://github.com/molvqingtai/comctx/commit/23780a1464c6226736d0c8c06126415055ec0246))
+
 ## [1.6.1](https://github.com/molvqingtai/comctx/compare/v1.6.0...v1.6.1) (2026-02-02)
 
 
