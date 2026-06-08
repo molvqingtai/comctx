@@ -129,7 +129,8 @@ The real example is organized like this:
     export const [provideCounter, injectCounter] = defineProxy(
       (initialValue: number = 0) => new Counter(initialValue),
       {
-        namespace: '__web-worker-example__'
+        namespace: '__web-worker-example__',
+        debug: import.meta.env.DEV
       },
     )
     ```
@@ -167,6 +168,8 @@ The real example is organized like this:
         declare const self: DedicatedWorkerGlobalScope
 
         export class ProvideAdapter implements Adapter {
+          name = 'web-worker-provider'
+
           sendMessage: SendMessage = (message) => {
             self.postMessage(message)
           }
@@ -183,7 +186,9 @@ The real example is organized like this:
         import { Adapter, SendMessage, OnMessage } from 'comctx'
 
         export class InjectAdapter implements Adapter {
+          name = 'web-worker-injector'
           worker: Worker
+
           constructor(path: string | URL) {
             this.worker = new Worker(path, { type: 'module' })
           }

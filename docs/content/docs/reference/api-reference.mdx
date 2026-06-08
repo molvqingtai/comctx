@@ -276,6 +276,9 @@ To adapt Comctx to different communication channels, implement this interface:
 
 ```ts
 interface Adapter<T extends MessageMeta = MessageMeta> {
+  /** Optional adapter name for debug logs and message diagnostics */
+  name?: string
+
   /** Send a message to the other side */
   sendMessage: (
     message: Message<T>,

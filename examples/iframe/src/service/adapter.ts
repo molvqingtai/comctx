@@ -1,6 +1,8 @@
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
 export default class ProvideAdapter implements Adapter {
+  name = 'iframe-provider'
+
   sendMessage: SendMessage = (message) => {
     window.parent.postMessage(message, '*')
   }
@@ -12,6 +14,8 @@ export default class ProvideAdapter implements Adapter {
 }
 
 export class InjectAdapter implements Adapter {
+  name = 'iframe-injector'
+
   sendMessage: SendMessage = (message) => {
     window.postMessage(message, '*')
   }

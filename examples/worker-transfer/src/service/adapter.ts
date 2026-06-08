@@ -3,6 +3,8 @@ import { Adapter, SendMessage, OnMessage } from 'comctx'
 declare const self: DedicatedWorkerGlobalScope
 
 export class ProvideAdapter implements Adapter {
+  name = 'worker-transfer-provider'
+
   sendMessage: SendMessage = (message, transfer) => {
     // Core will automatically extract transferables and pass as second parameter
     self.postMessage(message, transfer)
@@ -18,6 +20,7 @@ export class ProvideAdapter implements Adapter {
 }
 
 export class InjectAdapter implements Adapter {
+  name = 'worker-transfer-injector'
   worker: Worker
 
   constructor(path: string | URL) {

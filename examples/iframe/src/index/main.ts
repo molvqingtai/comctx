@@ -11,7 +11,7 @@ import type Counter from '../service/counter'
 void (async () => {
   const [, injectCounter] = defineProxy(() => ({}) as Counter, {
     namespace: '__iframe-example__',
-    debug: true
+    debug: import.meta.env.DEV
   })
 
   // Use the proxy object

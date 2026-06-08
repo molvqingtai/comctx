@@ -28,5 +28,5 @@ export class Counter {
 
 export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
   namespace: '__shared-worker-example__',
-  debug: true
+  debug: import.meta.env.DEV
 })

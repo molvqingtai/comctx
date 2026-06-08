@@ -17,7 +17,7 @@ export default defineContentScript({
 
     const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
       namespace: '__comctx-example__',
-      debug: true
+      debug: import.meta.env.DEV
     })
 
     const counter = injectContentCounter(new CustomEventInjectAdapter())

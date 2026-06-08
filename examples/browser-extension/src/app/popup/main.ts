@@ -7,7 +7,7 @@ import createElement from '@/utils/createElement'
 void (async () => {
   const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
     namespace: browser.runtime.id,
-    debug: true
+    debug: import.meta.env.DEV
   })
 
   // Use the proxy object

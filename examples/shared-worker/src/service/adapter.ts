@@ -3,6 +3,7 @@ import { Adapter, SendMessage, OnMessage } from 'comctx'
 declare const self: SharedWorkerGlobalScope
 
 export class ProvideAdapter implements Adapter {
+  name = 'shared-worker-provider'
   private clients = new Set<MessagePort>()
 
   sendMessage: SendMessage = (message) => {
@@ -28,7 +29,9 @@ export class ProvideAdapter implements Adapter {
 }
 
 export class InjectAdapter implements Adapter {
+  name = 'shared-worker-injector'
   worker: SharedWorker
+
   constructor(path: string | URL) {
     this.worker = new SharedWorker(path, { type: 'module' })
     this.worker.port.start()

@@ -292,6 +292,9 @@ To adapt to different communication channels, implement the following interface:
 
 ```typescript
 interface Adapter<T extends MessageMeta = MessageMeta> {
+  /** Optional adapter name for debug logs and message diagnostics */
+  name?: string
+
   /** Send a message to the other side */
   sendMessage: (message: Message<T>, transfer: Transferable[]) => MaybePromise<void>
 

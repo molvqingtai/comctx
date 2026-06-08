@@ -7,7 +7,7 @@ import ProvideAdapter from '../service/adapter'
 void (async () => {
   const [provideCounter] = defineProxy(() => new Counter(), {
     namespace: '__iframe-example__',
-    debug: true
+    debug: import.meta.env.DEV
   })
 
   const counter = provideCounter(new ProvideAdapter())

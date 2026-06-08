@@ -1,5 +1,5 @@
 import { test, describe, expect, vi } from 'vitest'
-import { defineProxy, MESSAGE_SENDER, MESSAGE_TYPE } from 'comctx'
+import { defineProxy, MESSAGE_SENDER_TYPE, MESSAGE_TYPE } from 'comctx'
 import type { Adapter } from 'comctx'
 import EventHub from '@resreq/event-hub'
 
@@ -227,6 +227,7 @@ describe('defineProxy', () => {
     const eventHub = new EventHub()
 
     const providerAdapter: Adapter = {
+      name: 'provider-test',
       sendMessage: (message) => eventHub.emit('provider-to-injector', message),
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
@@ -235,6 +236,7 @@ describe('defineProxy', () => {
     }
 
     const injectorAdapter: Adapter = {
+      name: 'injector-test',
       sendMessage: (message) => eventHub.emit('injector-to-provider', message),
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
@@ -253,26 +255,26 @@ describe('defineProxy', () => {
 
       await expect(proxy.getValue()).resolves.toBe(42)
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx] sendMessage:',
+        '[comctx:injector-test] sendMessage:',
         expect.objectContaining({
-          sender: MESSAGE_SENDER.INJECTOR,
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue']
         }),
         []
       )
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx] onMessage:',
+        '[comctx:provider-test] onMessage:',
         expect.objectContaining({
-          sender: MESSAGE_SENDER.INJECTOR,
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue']
         })
       )
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx] sendMessage:',
+        '[comctx:provider-test] sendMessage:',
         expect.objectContaining({
-          sender: MESSAGE_SENDER.PROVIDER,
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue'],
           data: 42
@@ -280,9 +282,9 @@ describe('defineProxy', () => {
         []
       )
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx] onMessage:',
+        '[comctx:injector-test] onMessage:',
         expect.objectContaining({
-          sender: MESSAGE_SENDER.PROVIDER,
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue'],
           data: 42
