@@ -27,5 +27,6 @@ export class Counter {
 }
 
 export const [provideCounter, injectCounter] = defineProxy((initialValue: number = 0) => new Counter(initialValue), {
-  namespace: '__web-worker-example__'
+  namespace: '__web-worker-example__',
+  debug: true
 })

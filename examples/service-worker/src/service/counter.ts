@@ -25,5 +25,6 @@ class Counter {
 }
 
 export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
-  namespace: '__service-worker-example__'
+  namespace: '__service-worker-example__',
+  debug: true
 })

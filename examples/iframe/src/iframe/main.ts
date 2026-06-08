@@ -6,7 +6,8 @@ import ProvideAdapter from '../service/adapter'
 // Register the proxy object
 void (async () => {
   const [provideCounter] = defineProxy(() => new Counter(), {
-    namespace: '__iframe-example__'
+    namespace: '__iframe-example__',
+    debug: true
   })
 
   const counter = provideCounter(new ProvideAdapter())
