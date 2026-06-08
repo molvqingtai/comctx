@@ -9,8 +9,10 @@ on:
       - 'release/**'
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
+  issues: write
+  pull-requests: write
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -87,4 +89,4 @@ jobs:
       - run: pnpm run build
       - run: pnpm semantic-release
         env:
-          GH_TOKEN: ${{ secrets.COMCTX_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
