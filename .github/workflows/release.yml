@@ -1,4 +1,4 @@
-name: CD
+name: Release
 
 on:
   push:
@@ -86,4 +86,4 @@ jobs:
       - run: pnpm run build
       - run: pnpm semantic-release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
