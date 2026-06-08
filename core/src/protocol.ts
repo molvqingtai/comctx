@@ -14,7 +14,7 @@ export type MessageType = (typeof MESSAGE_TYPE)[keyof typeof MESSAGE_TYPE]
 
 export type MessageSender = (typeof MESSAGE_SENDER)[keyof typeof MESSAGE_SENDER]
 
-export type MessageMeta<T extends Record<string, any> = Record<string, any>> = T
+export type MessageMeta = object
 
 export interface Message<T extends MessageMeta = MessageMeta> {
   readonly type: MessageType
