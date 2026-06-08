@@ -5,16 +5,21 @@ export const MESSAGE_TYPE = {
   PONG: 'pong'
 } as const
 
-export const MESSAGE_SENDER = {
+export const MESSAGE_SENDER_TYPE = {
   PROVIDER: 'provider',
   INJECTOR: 'injector'
 } as const
 
 export type MessageType = (typeof MESSAGE_TYPE)[keyof typeof MESSAGE_TYPE]
 
-export type MessageSender = (typeof MESSAGE_SENDER)[keyof typeof MESSAGE_SENDER]
+export type MessageSenderType = (typeof MESSAGE_SENDER_TYPE)[keyof typeof MESSAGE_SENDER_TYPE]
 
-export type MessageMeta<T extends Record<string, any> = Record<string, any>> = T
+export interface MessageSender {
+  readonly type: MessageSenderType
+  readonly name?: string
+}
+
+export type MessageMeta = object
 
 export interface Message<T extends MessageMeta = MessageMeta> {
   readonly type: MessageType
@@ -37,7 +42,13 @@ export const checkMessage = (message?: Partial<Message>) => {
 
   const isPath =
     !!message?.path && Array.isArray(message.path) && message.path.every((path) => typeof path === 'string')
-  const isSender = !!message?.sender && Object.values(MESSAGE_SENDER).includes(message.sender)
+
+  const isSender =
+    !!message?.sender &&
+    typeof message.sender === 'object' &&
+    !!message.sender.type &&
+    Object.values(MESSAGE_SENDER_TYPE).includes(message.sender.type) &&
+    (typeof message.sender.name === 'undefined' || typeof message.sender.name === 'string')
 
   const isCallbackIds =
     typeof message?.callbackIds === 'undefined' ||

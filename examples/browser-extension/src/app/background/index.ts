@@ -13,10 +13,11 @@ export default defineBackground({
     })
 
     const [provideBackgroundCounter] = defineProxy((initialValue: number) => new Counter(initialValue), {
-      namespace: browser.runtime.id
+      namespace: browser.runtime.id,
+      debug: import.meta.env.DEV
     })
 
-    const counter = provideBackgroundCounter(new ProvideAdapter(), 0)
+    const counter = provideBackgroundCounter(new ProvideAdapter('background'), 0)
 
     counter.onChange((value) => {
       console.log('background Value:', value)

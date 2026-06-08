@@ -1,7 +1,7 @@
 import uuid from '@/utils/uuid'
 import setIntervalImmediate from '@/utils/setIntervalImmediate'
 import extractTransfer from '@/utils/extractTransfer'
-import { checkMessage, Message, MESSAGE_SENDER, MESSAGE_TYPE, MessageMeta } from './protocol'
+import { checkMessage, Message, MESSAGE_SENDER_TYPE, MESSAGE_TYPE, MessageMeta } from './protocol'
 
 const PROXY_MARKER = Symbol('PROXY_MARKER')
 
@@ -19,6 +19,7 @@ export type OnMessage<T extends MessageMeta = MessageMeta> = (
 ) => MaybePromise<OffMessage | void>
 
 export interface Adapter<T extends MessageMeta = MessageMeta> {
+  name?: string
   sendMessage: SendMessage<T>
   onMessage: OnMessage<T>
 }
@@ -32,6 +33,7 @@ export interface Options {
   heartbeatTimeout?: number
   transfer?: boolean
   backup?: boolean
+  debug?: boolean
 }
 
 export const isProxy = (target: any) => {
@@ -40,78 +42,132 @@ export const isProxy = (target: any) => {
   )
 }
 
-const heartbeatCheck = async (adapter: Adapter, options: Required<Options>) => {
-  let clearHeartbeatInterval: () => void
-  let clearHeartbeatTimeout: () => void
+const checkHeartbeat = async (adapter: Adapter, options: Required<Options>) => {
+  const { promise, resolve, reject } = Promise.withResolvers<void>()
   const offMessages = new Set<OffMessage>()
 
-  const heartbeatInterval = new Promise<void>((resolve, reject) => {
-    clearHeartbeatInterval = setIntervalImmediate(async () => {
-      try {
-        const messageId = uuid()
-        const offMessage = await adapter.onMessage((message) => {
-          if (!checkMessage(message)) return
-          const _message = message as Message
-          if (_message.namespace !== options.namespace) return
-          if (_message.sender !== MESSAGE_SENDER.PROVIDER) return
-          if (_message.type !== MESSAGE_TYPE.PONG) return
-          if (_message.id !== messageId) return
-          resolve()
-        })
+  const clearHeartbeatInterval = setIntervalImmediate(async () => {
+    try {
+      const messageId = uuid()
+      const offMessage = await adapter.onMessage((message) => {
+        const _message = message as Message
+        if (_message.namespace !== options.namespace) return
+        if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
+        if (_message.type !== MESSAGE_TYPE.PONG) return
+        if (_message.id !== messageId) return
+        resolve()
+      })
 
-        offMessage && offMessages.add(offMessage)
+      offMessage && offMessages.add(offMessage)
 
-        const pingMessage: Message = {
-          type: MESSAGE_TYPE.PING,
-          sender: MESSAGE_SENDER.INJECTOR,
-          id: messageId,
-          path: [],
-          meta: {},
-          namespace: options.namespace,
-          timeStamp: Date.now()
-        }
-        adapter.sendMessage(pingMessage, options.transfer ? extractTransfer(pingMessage) : [])
-      } catch (error) {
-        reject(error)
+      const pingMessage: Message = {
+        type: MESSAGE_TYPE.PING,
+        sender: { type: MESSAGE_SENDER_TYPE.INJECTOR, name: adapter.name },
+        id: messageId,
+        path: [],
+        meta: {},
+        namespace: options.namespace,
+        timeStamp: Date.now()
       }
-    }, options.heartbeatInterval)
-  })
+      adapter.sendMessage(pingMessage, [])
+    } catch (error) {
+      reject(error)
+    }
+  }, options.heartbeatInterval)
 
-  const heartbeatTimeout = new Promise<void>((_, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error(`Provider unavailable: heartbeat check timeout ${options.heartbeatTimeout}ms.`)),
-      options.heartbeatTimeout
-    )
-    clearHeartbeatTimeout = () => clearTimeout(timer)
-  })
+  const heartbeatTimeout = setTimeout(
+    () => reject(new Error(`Provider unavailable: heartbeat check timeout ${options.heartbeatTimeout}ms.`)),
+    options.heartbeatTimeout
+  )
 
-  await Promise.race([heartbeatInterval, heartbeatTimeout]).finally(() => {
+  await promise.finally(() => {
     clearHeartbeatInterval()
-    clearHeartbeatTimeout()
+    clearTimeout(heartbeatTimeout)
     offMessages.forEach((offMessage) => offMessage())
     offMessages.clear()
   })
 }
 
+const withCheckMessage = (adapter: Adapter): Adapter => ({
+  name: adapter.name,
+  sendMessage: (message, transfer) => {
+    return adapter.sendMessage(message, transfer)
+  },
+  onMessage: (callback) => {
+    return adapter.onMessage((message) => {
+      if (!checkMessage(message)) return
+      return callback(message)
+    })
+  }
+})
+
+const withExtractTransfer = (adapter: Adapter, options: Required<Options>): Adapter => ({
+  name: adapter.name,
+  sendMessage: (message, transfer) => {
+    return adapter.sendMessage(message, options.transfer ? extractTransfer(message) : transfer)
+  },
+  onMessage: (callback) => {
+    return adapter.onMessage(callback)
+  }
+})
+
+const withDebugLogger = (adapter: Adapter, options: Required<Options>): Adapter => {
+  return {
+    name: adapter.name,
+    sendMessage: (message, transfer) => {
+      options.debug &&
+        console.debug(`${adapter.name ? `[comctx:${adapter.name}]` : '[comctx]'} sendMessage:`, message, transfer)
+      return adapter.sendMessage(message, transfer)
+    },
+    onMessage: (callback) => {
+      return adapter.onMessage((message) => {
+        options.debug && console.debug(`${adapter.name ? `[comctx:${adapter.name}]` : '[comctx]'} onMessage:`, message)
+        return callback(message)
+      })
+    }
+  }
+}
+
+const withCheckHeartbeat = (adapter: Adapter, options: Required<Options>): Adapter => ({
+  name: adapter.name,
+  sendMessage: async (message, transfer) => {
+    if (
+      options.heartbeatCheck &&
+      message.sender.type === MESSAGE_SENDER_TYPE.INJECTOR &&
+      message.type === MESSAGE_TYPE.APPLY
+    ) {
+      await checkHeartbeat(adapter, options)
+    }
+
+    return adapter.sendMessage(message, transfer)
+  },
+  onMessage: (callback) => {
+    return adapter.onMessage(callback)
+  }
+})
+
+const composeAdapter = (adapter: Adapter, options: Required<Options>) => {
+  return withCheckHeartbeat(withDebugLogger(withExtractTransfer(withCheckMessage(adapter), options), options), options)
+}
+
 const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapter, options: Required<Options>) => {
   adapter.onMessage(async (message) => {
-    if (!checkMessage(message)) return
     const _message = message as Message
     if (_message.namespace !== options.namespace) return
-    if (_message.sender !== MESSAGE_SENDER.INJECTOR) return
+    if (_message.sender.type !== MESSAGE_SENDER_TYPE.INJECTOR) return
 
     switch (_message!.type) {
       case MESSAGE_TYPE.PING: {
         const pongMessage: Message = {
           type: MESSAGE_TYPE.PONG,
-          sender: MESSAGE_SENDER.PROVIDER,
+          sender: { type: MESSAGE_SENDER_TYPE.PROVIDER, name: adapter.name },
           id: _message.id,
           path: _message.path,
           meta: _message.meta,
           namespace: options.namespace,
           timeStamp: Date.now()
         }
-        adapter.sendMessage(pongMessage, options.transfer ? extractTransfer(pongMessage) : [])
+        adapter.sendMessage(pongMessage, [])
         break
       }
       case MESSAGE_TYPE.APPLY: {
@@ -121,7 +177,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
               return (...args: any[]) => {
                 const callbackMessage: Message = {
                   type: MESSAGE_TYPE.CALLBACK,
-                  sender: MESSAGE_SENDER.PROVIDER,
+                  sender: { type: MESSAGE_SENDER_TYPE.PROVIDER, name: adapter.name },
                   id: arg,
                   path: _message.path,
                   meta: _message.meta,
@@ -129,7 +185,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
                   namespace: options.namespace,
                   timeStamp: Date.now()
                 }
-                adapter.sendMessage(callbackMessage, options.transfer ? extractTransfer(callbackMessage) : [])
+                adapter.sendMessage(callbackMessage, [])
               }
             } else {
               return arg
@@ -145,7 +201,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
         }
         const responseMessage: Message = {
           type: MESSAGE_TYPE.APPLY,
-          sender: MESSAGE_SENDER.PROVIDER,
+          sender: { type: MESSAGE_SENDER_TYPE.PROVIDER, name: adapter.name },
           id: _message.id,
           path: _message.path,
           data: _message.data,
@@ -154,7 +210,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: Adapte
           namespace: options.namespace,
           timeStamp: Date.now()
         }
-        adapter.sendMessage(responseMessage, options.transfer ? extractTransfer(responseMessage) : [])
+        adapter.sendMessage(responseMessage, [])
         break
       }
     }
@@ -196,18 +252,15 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
       apply(_target, _this, args) {
         return new Promise<Message>(async (resolve, reject) => {
           try {
-            options.heartbeatCheck && (await heartbeatCheck(adapter, options))
-
             const callbackIds: string[] = []
             const mapArgs = args.map((arg) => {
               if (typeof arg === 'function') {
                 const callbackId = uuid()
                 callbackIds.push(callbackId)
                 adapter.onMessage((message) => {
-                  if (!checkMessage(message)) return
                   const _message = message as Message
                   if (_message.namespace !== options.namespace) return
-                  if (_message.sender !== MESSAGE_SENDER.PROVIDER) return
+                  if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
                   if (_message.type !== MESSAGE_TYPE.CALLBACK) return
                   if (_message.id !== callbackId) return
                   arg(..._message.data)
@@ -220,10 +273,9 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
 
             const messageId = uuid()
             const offMessage = await adapter.onMessage((message) => {
-              if (!checkMessage(message)) return
               const _message = message as Message
               if (_message.namespace !== options.namespace) return
-              if (_message.sender !== MESSAGE_SENDER.PROVIDER) return
+              if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
               if (_message.type !== MESSAGE_TYPE.APPLY) return
               if (_message.id !== messageId) return
               _message.error ? reject(new Error(_message.error)) : resolve(_message.data)
@@ -232,7 +284,7 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
 
             const applyMessage: Message = {
               type: MESSAGE_TYPE.APPLY,
-              sender: MESSAGE_SENDER.INJECTOR,
+              sender: { type: MESSAGE_SENDER_TYPE.INJECTOR, name: adapter.name },
               id: messageId,
               path,
               args: mapArgs,
@@ -241,7 +293,7 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
               timeStamp: Date.now(),
               namespace: options.namespace
             }
-            adapter.sendMessage(applyMessage, options.transfer ? extractTransfer(applyMessage) : [])
+            await adapter.sendMessage(applyMessage, [])
           } catch (error) {
             reject(error)
           }
@@ -258,15 +310,19 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: Adapter
 const provideProxy = <T extends Context>(context: T, options: Required<Options>) => {
   let target: ReturnType<T>
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>, ...args: Parameters<T>) =>
-    (target ??= createProvide(context(...args) as ReturnType<T>, adapter as Adapter, options))
+    (target ??= createProvide(
+      context(...args) as ReturnType<T>,
+      composeAdapter(adapter as unknown as Adapter, options),
+      options
+    ))
 }
 
 const injectProxy = <T extends Context>(context: T, options: Required<Options>) => {
   let target: ReturnType<T>
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>) =>
-    (target ??= createInject<ReturnType<T>>(
+    (target ??= createInject(
       (options.backup ? Object.freeze(context()) : {}) as ReturnType<T>,
-      adapter as Adapter,
+      composeAdapter(adapter as unknown as Adapter, options),
       options
     ))
 }
@@ -284,6 +340,7 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
  *   - heartbeatTimeout: Max wait time for heartbeat response in milliseconds (default: 1000).
  *   - transfer: Whether to use transferable objects for message transfer (default is false).
  *   - backup: Whether to use a backup implementation of the original object in the injector (default is false).
+ *   - debug: Whether to log adapter messages for debugging (default is false).
  * @returns Returns a tuple containing two elements:
  *   - [0] provideProxy: Accepts an adapter and creates a provider proxy.
  *   - [1] injectProxy: Accepts an adapter and creates an injector proxy.
@@ -307,7 +364,8 @@ export const defineProxy = <T extends Context>(context: T, options?: Options) =>
     heartbeatInterval: options?.heartbeatInterval ?? 300,
     heartbeatTimeout: options?.heartbeatTimeout ?? 1000,
     transfer: options?.transfer ?? false,
-    backup: options?.backup ?? false
+    backup: options?.backup ?? false,
+    debug: options?.debug ?? false
   }
 
   if (mergedOptions.heartbeatTimeout <= mergedOptions.heartbeatInterval) {

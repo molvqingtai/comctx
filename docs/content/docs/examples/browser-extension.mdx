@@ -220,6 +220,12 @@ It includes:
     }
 
     export class ProvideAdapter implements Adapter<MessageMeta> {
+      name: string
+
+      constructor(name: string) {
+        this.name = name
+      }
+
       sendMessage: SendMessage<MessageMeta> = async (message) => {
         switch (message.meta.injector) {
           case 'content': {
@@ -241,7 +247,17 @@ It includes:
 
       onMessage: OnMessage<MessageMeta> = (callback) => {
         const handler = (message?: Partial<Message<MessageMeta>>) => {
-          callback(message)
+          if (!message?.meta) {
+            return callback(message)
+          }
+
+          callback({
+            ...message,
+            meta: {
+              ...message.meta,
+              injector: message?.sender?.name as MessageMeta['injector']
+            }
+          })
         }
         browser.runtime.onMessage.addListener(handler)
         return () => browser.runtime.onMessage.removeListener(handler)
@@ -249,14 +265,16 @@ It includes:
     }
 
     export class InjectAdapter implements Adapter<MessageMeta> {
-      injector?: 'content' | 'popup'
-      constructor(injector?: 'content' | 'popup') {
-        this.injector = injector
+      name: string
+
+      constructor(name: string) {
+        this.name = name
       }
+
       sendMessage: SendMessage<MessageMeta> = (message) => {
         browser.runtime.sendMessage(browser.runtime.id, {
           ...message,
-          meta: { url: document.location.href, injector: this.injector }
+          meta: { url: document.location.href }
         })
       }
       onMessage: OnMessage<MessageMeta> = (callback) => {
@@ -305,6 +323,12 @@ It includes:
     import type { Adapter, Message, OnMessage, SendMessage } from 'comctx'
 
     export class ProvideAdapter implements Adapter {
+      name: string
+
+      constructor(name: string) {
+        this.name = name
+      }
+
       sendMessage: SendMessage = (message) => {
         const detail =
           typeof cloneInto === 'function'
@@ -340,6 +364,7 @@ It includes:
         payload can work correctly in Firefox.
       </CalloutDescription>
     </Callout>
+
   </Step>
 
   <Step>
@@ -373,11 +398,15 @@ It includes:
         const [provideBackgroundCounter] = defineProxy(
           (initialValue: number) => new Counter(initialValue),
           {
-            namespace: browser.runtime.id
+            namespace: browser.runtime.id,
+            debug: import.meta.env.DEV
           }
         )
 
-        const counter = provideBackgroundCounter(new ProvideAdapter(), 0)
+        const counter = provideBackgroundCounter(
+          new ProvideAdapter('background'),
+          0
+        )
 
         counter.onChange((value) => {
           console.log('background Value:', value)
@@ -427,7 +456,8 @@ It includes:
       cssInjectionMode: 'ui',
       async main(ctx) {
         const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
-          namespace: browser.runtime.id
+          namespace: browser.runtime.id,
+          debug: import.meta.env.DEV
         })
 
         const counter = injectBackgroundCounter(
@@ -435,10 +465,11 @@ It includes:
         )
 
         const [provideContentCounter] = defineProxy(() => counter, {
-          namespace: '__comctx-example__'
+          namespace: '__comctx-example__',
+          debug: import.meta.env.DEV
         })
 
-        provideContentCounter(new CustomEventProvideAdapter())
+        provideContentCounter(new CustomEventProvideAdapter('content'))
 
         const ui = await createShadowRootUi(ctx, {
           name,
@@ -530,10 +561,11 @@ It includes:
         document.body.querySelector('div')?.remove()
 
         const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
-          namespace: '__comctx-example__'
+          namespace: '__comctx-example__',
+          debug: import.meta.env.DEV
         })
 
-        const counter = injectContentCounter(new CustomEventInjectAdapter())
+        const counter = injectContentCounter(new CustomEventInjectAdapter('injected'))
 
         const initValue = await counter.getValue()
 
@@ -602,7 +634,8 @@ It includes:
 
     void (async () => {
       const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
-        namespace: browser.runtime.id
+        namespace: browser.runtime.id,
+        debug: import.meta.env.DEV
       })
 
       const counter = injectBackgroundCounter(

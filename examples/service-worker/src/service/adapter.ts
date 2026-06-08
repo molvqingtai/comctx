@@ -4,6 +4,8 @@ import { Adapter, SendMessage, OnMessage } from 'comctx'
 declare const self: ServiceWorkerGlobalScope
 
 export class ProvideAdapter implements Adapter {
+  name = 'service-worker-provider'
+
   sendMessage: SendMessage = (message) => {
     self.clients.matchAll().then((clients) => {
       clients.forEach((client) => client.postMessage(message))
@@ -17,7 +19,9 @@ export class ProvideAdapter implements Adapter {
 }
 
 export class InjectAdapter implements Adapter {
+  name = 'service-worker-injector'
   workbox: Workbox
+
   constructor(path: string) {
     this.workbox = new Workbox(path, { type: import.meta.env.MODE === 'production' ? 'classic' : 'module' })
     this.workbox.register()

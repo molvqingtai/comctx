@@ -15,17 +15,19 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
   async main(ctx) {
     const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
-      namespace: browser.runtime.id
+      namespace: browser.runtime.id,
+      debug: import.meta.env.DEV
     })
 
     const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter('content'))
 
     // The bridge exposed to injected-script
     const [provideContentCounter] = defineProxy(() => counter, {
-      namespace: '__comctx-example__'
+      namespace: '__comctx-example__',
+      debug: import.meta.env.DEV
     })
 
-    provideContentCounter(new CustomEventProvideAdapter())
+    provideContentCounter(new CustomEventProvideAdapter('content'))
 
     const ui = await createShadowRootUi(ctx, {
       name,

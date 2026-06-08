@@ -1,5 +1,5 @@
 import { test, describe, expect, vi } from 'vitest'
-import { defineProxy } from 'comctx'
+import { defineProxy, MESSAGE_SENDER_TYPE, MESSAGE_TYPE } from 'comctx'
 import type { Adapter } from 'comctx'
 import EventHub from '@resreq/event-hub'
 
@@ -220,5 +220,78 @@ describe('defineProxy', () => {
 
     const result = await proxy.foo.bar.getValue()
     expect(result).toBe(123)
+  })
+
+  test('should log adapter messages when debug is enabled', async () => {
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      name: 'provider-test',
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      name: 'injector-test',
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      heartbeatCheck: false,
+      debug: true
+    })
+
+    try {
+      provide(providerAdapter)
+      const proxy = inject(injectorAdapter)
+
+      await expect(proxy.getValue()).resolves.toBe(42)
+      expect(debugSpy).toHaveBeenCalledWith(
+        '[comctx:injector-test] sendMessage:',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue']
+        }),
+        []
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '[comctx:provider-test] onMessage:',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue']
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '[comctx:provider-test] sendMessage:',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue'],
+          data: 42
+        }),
+        []
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '[comctx:injector-test] onMessage:',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue'],
+          data: 42
+        })
+      )
+    } finally {
+      debugSpy.mockRestore()
+    }
   })
 })

@@ -16,10 +16,11 @@ export default defineContentScript({
     document.body.querySelector('div')?.remove()
 
     const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
-      namespace: '__comctx-example__'
+      namespace: '__comctx-example__',
+      debug: import.meta.env.DEV
     })
 
-    const counter = injectContentCounter(new CustomEventInjectAdapter())
+    const counter = injectContentCounter(new CustomEventInjectAdapter('injected'))
 
     const initValue = await counter.getValue()
 

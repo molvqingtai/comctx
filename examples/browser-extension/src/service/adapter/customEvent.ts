@@ -1,6 +1,10 @@
 import type { Adapter, Message, OnMessage, SendMessage } from 'comctx'
 
 export class ProvideAdapter implements Adapter {
+  name: string
+  constructor(name: string) {
+    this.name = name
+  }
   sendMessage: SendMessage = (message) => {
     /**
      * Compatible with Firefox
@@ -9,12 +13,10 @@ export class ProvideAdapter implements Adapter {
     const detail = typeof cloneInto === 'function' ? cloneInto(message, document.defaultView) : message
 
     document.dispatchEvent(new CustomEvent('message', { detail }))
-    // console.log('EventProvideAdapter SendMessage', message)
   }
   onMessage: OnMessage = (callback) => {
     const handler = (event: Event) => {
       callback((event as CustomEvent<Partial<Message> | undefined>).detail)
-      // console.log('EventProvideAdapter SendMessage', event.detail)
     }
     document.addEventListener('message', handler)
     return () => document.removeEventListener('message', handler)

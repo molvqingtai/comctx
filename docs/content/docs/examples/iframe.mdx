@@ -155,6 +155,8 @@ The real example is organized like this:
         import { Adapter, SendMessage, OnMessage } from 'comctx'
 
         export default class ProvideAdapter implements Adapter {
+          name = 'iframe-provider'
+
           sendMessage: SendMessage = (message) => {
             window.parent.postMessage(message, '*')
           }
@@ -172,6 +174,8 @@ The real example is organized like this:
         import { Adapter, SendMessage, OnMessage } from 'comctx'
 
         export class InjectAdapter implements Adapter {
+          name = 'iframe-injector'
+
           sendMessage: SendMessage = (message) => {
             window.postMessage(message, '*')
           }
@@ -221,7 +225,8 @@ The real example is organized like this:
     // Register the proxy object
     void (async () => {
       const [provideCounter] = defineProxy(() => new Counter(), {
-        namespace: '__iframe-example__'
+        namespace: '__iframe-example__',
+        debug: import.meta.env.DEV
       })
 
       const counter = provideCounter(new ProvideAdapter())
@@ -271,7 +276,8 @@ The real example is organized like this:
 
     void (async () => {
       const [, injectCounter] = defineProxy(() => ({}) as Counter, {
-        namespace: '__iframe-example__'
+        namespace: '__iframe-example__',
+        debug: import.meta.env.DEV
       })
 
       // Use the proxy object

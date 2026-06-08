@@ -10,6 +10,9 @@ To adapt Comctx to a specific environment, implement the following interface:
 
 ```ts
 interface Adapter<T extends MessageMeta = MessageMeta> {
+  /** Optional adapter name for debug logs and message diagnostics */
+  name?: string
+
   /** Send a message to the other side */
   sendMessage: (message: Message<T>, transfer: Transferable[]) => MaybePromise<void>
 
@@ -41,6 +44,8 @@ A minimal adapter looks like this:
 import type { Adapter, SendMessage, OnMessage } from 'comctx'
 
 export default class CustomAdapter implements Adapter {
+  name = 'custom-adapter'
+
   sendMessage: SendMessage = (message) => {
     postMessage(message)
   }

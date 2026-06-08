@@ -2,7 +2,7 @@
 
 Use RPC to communicate easily across contexts in any JavaScript environment.
 
-[![version](https://img.shields.io/github/v/release/molvqingtai/comctx)](https://www.npmjs.com/package/comctx) [![workflow](https://github.com/molvqingtai/comctx/actions/workflows/ci.yml/badge.svg)](https://github.com/molvqingtai/comctx/actions) [![download](https://img.shields.io/npm/dw/comctx)](https://www.npmjs.com/package/comctx) [![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/comctx)](https://www.npmjs.com/package/comctx) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/molvqingtai/comctx)
+[![version](https://img.shields.io/github/v/release/molvqingtai/comctx)](https://www.npmjs.com/package/comctx) [![JSR](https://jsr.io/badges/@comctx/comctx)](https://jsr.io/@comctx/comctx) [![workflow](https://github.com/molvqingtai/comctx/actions/workflows/ci.yml/badge.svg)](https://github.com/molvqingtai/comctx/actions) [![download](https://img.shields.io/npm/dw/comctx)](https://www.npmjs.com/package/comctx) [![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/comctx)](https://www.npmjs.com/package/comctx) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/molvqingtai/comctx)
 
 ```shell
 $ pnpm install comctx
@@ -292,6 +292,9 @@ To adapt to different communication channels, implement the following interface:
 
 ```typescript
 interface Adapter<T extends MessageMeta = MessageMeta> {
+  /** Optional adapter name for debug logs and message diagnostics */
+  name?: string
+
   /** Send a message to the other side */
   sendMessage: (message: Message<T>, transfer: Transferable[]) => MaybePromise<void>
 

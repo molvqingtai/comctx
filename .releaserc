@@ -1,6 +1,6 @@
 {
   "branches": [
-    "release/**"
+    "master"
   ],
   "plugins": [
     "@semantic-release/commit-analyzer",
@@ -8,6 +8,17 @@
     "@semantic-release/changelog",
     "@semantic-release/github",
     "@semantic-release/npm",
-    "@semantic-release/git"
+    "@sebbo2002/semantic-release-jsr",
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "package.json",
+          "pnpm-lock.yaml",
+          "jsr.json"
+        ]
+      }
+    ]
   ]
 }

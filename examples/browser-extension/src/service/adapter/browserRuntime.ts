@@ -7,6 +7,10 @@ export interface MessageMeta {
 }
 
 export class ProvideAdapter implements Adapter<MessageMeta> {
+  name: string
+  constructor(name: string) {
+    this.name = name
+  }
   sendMessage: SendMessage<MessageMeta> = async (message) => {
     switch (message.meta.injector) {
       case 'content': {
@@ -35,7 +39,17 @@ export class ProvideAdapter implements Adapter<MessageMeta> {
 
   onMessage: OnMessage<MessageMeta> = (callback) => {
     const handler = (message?: Partial<Message<MessageMeta>>) => {
-      callback(message)
+      if (!message?.meta) {
+        return callback(message)
+      }
+
+      callback({
+        ...message,
+        meta: {
+          ...message.meta,
+          injector: message?.sender?.name as MessageMeta['injector']
+        }
+      })
     }
     browser.runtime.onMessage.addListener(handler)
     return () => browser.runtime.onMessage.removeListener(handler)
@@ -43,14 +57,14 @@ export class ProvideAdapter implements Adapter<MessageMeta> {
 }
 
 export class InjectAdapter implements Adapter<MessageMeta> {
-  injector?: 'content' | 'popup'
-  constructor(injector?: 'content' | 'popup') {
-    this.injector = injector
+  name: string
+  constructor(name: string) {
+    this.name = name
   }
   sendMessage: SendMessage<MessageMeta> = (message) => {
     browser.runtime.sendMessage(browser.runtime.id, {
       ...message,
-      meta: { url: document.location.href, injector: this.injector }
+      meta: { url: document.location.href }
     })
   }
   onMessage: OnMessage<MessageMeta> = (callback) => {

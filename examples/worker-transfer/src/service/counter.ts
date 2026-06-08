@@ -31,5 +31,6 @@ class Counter {
 
 export const [provideCounter, injectCounter] = defineProxy((initialValue) => new Counter(initialValue), {
   namespace: '__worker-transfer-example__',
-  transfer: true // Use zero-copy transfer (transferable objects). If false, use structured clone
+  transfer: true, // Use zero-copy transfer (transferable objects). If false, use structured clone
+  debug: import.meta.env.DEV
 })

@@ -3,6 +3,8 @@ import { Adapter, SendMessage, OnMessage } from 'comctx'
 declare const self: DedicatedWorkerGlobalScope
 
 export class ProvideAdapter implements Adapter {
+  name = 'web-worker-provider'
+
   sendMessage: SendMessage = (message) => {
     self.postMessage(message)
   }
@@ -14,7 +16,9 @@ export class ProvideAdapter implements Adapter {
 }
 
 export class InjectAdapter implements Adapter {
+  name = 'web-worker-injector'
   worker: Worker
+
   constructor(path: string | URL) {
     this.worker = new Worker(path, { type: 'module' })
   }
