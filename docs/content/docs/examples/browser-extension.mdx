@@ -323,7 +323,11 @@ It includes:
     import type { Adapter, Message, OnMessage, SendMessage } from 'comctx'
 
     export class ProvideAdapter implements Adapter {
-      name = 'inject'
+      name: string
+
+      constructor(name: string) {
+        this.name = name
+      }
 
       sendMessage: SendMessage = (message) => {
         const detail =
@@ -400,7 +404,7 @@ It includes:
         )
 
         const counter = provideBackgroundCounter(
-          new ProvideAdapter('service-worker'),
+          new ProvideAdapter('background'),
           0
         )
 
@@ -465,7 +469,7 @@ It includes:
           debug: import.meta.env.DEV
         })
 
-        provideContentCounter(new CustomEventProvideAdapter())
+        provideContentCounter(new CustomEventProvideAdapter('content'))
 
         const ui = await createShadowRootUi(ctx, {
           name,
@@ -561,7 +565,7 @@ It includes:
           debug: import.meta.env.DEV
         })
 
-        const counter = injectContentCounter(new CustomEventInjectAdapter())
+        const counter = injectContentCounter(new CustomEventInjectAdapter('injected'))
 
         const initValue = await counter.getValue()
 

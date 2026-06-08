@@ -20,7 +20,7 @@ export default defineContentScript({
       debug: import.meta.env.DEV
     })
 
-    const counter = injectContentCounter(new CustomEventInjectAdapter())
+    const counter = injectContentCounter(new CustomEventInjectAdapter('injected'))
 
     const initValue = await counter.getValue()
 

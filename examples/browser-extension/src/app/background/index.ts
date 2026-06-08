@@ -17,7 +17,7 @@ export default defineBackground({
       debug: import.meta.env.DEV
     })
 
-    const counter = provideBackgroundCounter(new ProvideAdapter('service-worker'), 0)
+    const counter = provideBackgroundCounter(new ProvideAdapter('background'), 0)
 
     counter.onChange((value) => {
       console.log('background Value:', value)

@@ -1,7 +1,10 @@
 import type { Adapter, Message, OnMessage, SendMessage } from 'comctx'
 
 export class ProvideAdapter implements Adapter {
-  name = 'inject'
+  name: string
+  constructor(name: string) {
+    this.name = name
+  }
   sendMessage: SendMessage = (message) => {
     /**
      * Compatible with Firefox

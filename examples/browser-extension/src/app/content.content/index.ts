@@ -27,7 +27,7 @@ export default defineContentScript({
       debug: import.meta.env.DEV
     })
 
-    provideContentCounter(new CustomEventProvideAdapter())
+    provideContentCounter(new CustomEventProvideAdapter('content'))
 
     const ui = await createShadowRootUi(ctx, {
       name,
