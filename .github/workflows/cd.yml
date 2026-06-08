@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - 'release/**'
+
+permissions:
+  contents: read
+  id-token: write
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -84,4 +88,3 @@ jobs:
       - run: pnpm semantic-release
         env:
           GH_TOKEN: ${{ secrets.COMCTX_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.COMCTX_NPM_TOKEN }}

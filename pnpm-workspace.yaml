@@ -4,3 +4,8 @@ packages:
   - '__tests__'
   - '__tests__/fixtures/*'
   - 'examples/*'
+allowBuilds:
+  esbuild: true
+  msw: true
+  sharp: true
+  spawn-sync: true

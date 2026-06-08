@@ -1,0 +1,14 @@
+{
+  "name": "@comctx/comctx",
+  "version": "0.0.0",
+  "license": "MIT",
+  "exports": "./core/dist/index.js",
+  "publish": {
+    "include": [
+      "core/dist/index.js",
+      "core/dist/index.d.ts",
+      "README.md",
+      "LICENSE"
+    ]
+  }
+}
