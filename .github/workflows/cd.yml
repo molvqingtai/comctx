@@ -3,10 +3,7 @@ name: CD
 on:
   push:
     branches:
-      - 'release/**'
-  pull_request:
-    branches:
-      - 'release/**'
+      - master
 
 permissions:
   contents: write
