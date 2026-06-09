@@ -525,4 +525,58 @@ describe('defineProxy', () => {
       debugSpy.mockRestore()
     }
   })
+
+  test('should filter debug logs by message level', async () => {
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      name: 'provider-test',
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      name: 'injector-test',
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      heartbeatCheck: false,
+      debug: 'message'
+    })
+
+    try {
+      provide(providerAdapter)
+      const proxy = inject(injectorAdapter)
+
+      await expect(proxy.getValue()).resolves.toBe(42)
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:message%c %cinjector%c %csendMessage%c %capply%c',
+        'color: #0ea5e9',
+        '',
+        'color: #0891b2',
+        '',
+        'color: #f97316',
+        '',
+        'color: #2563eb',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue']
+        })
+      )
+      expect(debugSpy.mock.calls.some(([format]) => String(format).includes('comctx:event'))).toBe(false)
+    } finally {
+      debugSpy.mockRestore()
+    }
+  })
 })

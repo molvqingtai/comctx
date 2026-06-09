@@ -170,7 +170,7 @@ const withDebugLogger = (adapter: Adapter, options: DebugOptions): DebugAdapter 
   const debugLog = ({ level, method, message, actor = message.sender.type }: DebugLogOptions) => {
     const labelStyle = level === 'message' ? secondaryLabelStyle : primaryLabelStyle
     const messageStyle = level === 'message' ? secondaryMessageStyle : primaryMessageStyle
-    const shouldDebugLog = options.debug === true || options.debug === 'message' || level === options.debug
+    const shouldDebugLog = options.debug === true || level === options.debug
     shouldDebugLog &&
       console.debug(
         `%ccomctx:${level}%c %c${actor}%c %c${method}%c %c${message.type}%c`,
@@ -441,7 +441,7 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
  *   - heartbeatTimeout: Max wait time for heartbeat response in milliseconds (default: 1000).
  *   - transfer: Whether to use transferable objects for message transfer (default is false).
  *   - backup: Whether to use a backup implementation of the original object in the injector (default is false).
- *   - debug: Whether to log debug output. Use true or 'message' for all logs, and 'event' for effective Comctx events only (default is false).
+ *   - debug: Whether to log debug output. Use true for message and event logs, 'message' for adapter-level message logs, and 'event' for effective Comctx event logs (default is false).
  * @returns Returns a tuple containing two elements:
  *   - [0] provideProxy: Accepts an adapter and creates a provider proxy.
  *   - [1] injectProxy: Accepts an adapter and creates an injector proxy.
