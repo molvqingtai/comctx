@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/molvqingtai/comctx/compare/v1.7.1...v1.7.2) (2026-06-09)
+
+
+### Performance Improvements
+
+* add debug log labels ([f8cb0d9](https://github.com/molvqingtai/comctx/commit/f8cb0d95ec58df5fe80bb97ed46692b5191c1b3f))
+
 ## [1.7.1](https://github.com/molvqingtai/comctx/compare/v1.7.0...v1.7.1) (2026-06-09)
 
 
