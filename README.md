@@ -23,7 +23,7 @@ https://github.com/user-attachments/assets/d1601b54-2669-45d7-b1e5-9bbde1186856
 - **Bidirectional Communication** - Method calls & callback support
 - **Zero Copy** - Automatic extraction and zero-copy transfer of transferable objects
 - **Type Safety** - Full TypeScript integration
-- **Lightweight** - 1KB gzipped core
+- **Lightweight** - 2KB gzipped core
 - **Fault Tolerance** - Backup implementations & connection heartbeat checks
 
 ## 🚀 Quick Start
@@ -118,6 +118,24 @@ const count = await proxyCounter.getValue()
 - Since the injector is a virtual proxy, to support operations like `Reflect.has(proxyCounter, 'key')`, you can set `backup` to `true`, which creates a static copy on the injector side that serves as a template without actually running.
 
 - `provideCounter` and `injectCounter` require user-defined adapters for different environments that implement `onMessage` and `sendMessage` methods.
+
+## Debug logging
+
+Enable debug output while developing adapters or cross-context flows:
+
+```typescript
+const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+  debug: import.meta.env.DEV
+})
+```
+
+`debug` accepts `true`, `'message'`, or `'event'`:
+
+- `true` and `'message'` log both `comctx:message` and `comctx:event`.
+- `'event'` logs only effective Comctx events.
+- `comctx:message` shows messages seen by the adapter.
+- `comctx:event` shows messages accepted by Comctx and routed into send or receive handling.
 
 ## 🧩 Advanced Usage
 

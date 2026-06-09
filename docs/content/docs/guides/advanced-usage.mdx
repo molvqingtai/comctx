@@ -84,6 +84,32 @@ export default class TransferAdapter implements Adapter {
 }
 ```
 
+## Debug Logging
+
+Use `debug` when validating an adapter or investigating cross-context flow:
+
+```ts
+export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+  debug: import.meta.env.DEV
+})
+```
+
+For focused output, use a debug level:
+
+```ts
+debug: 'event'
+```
+
+Debug levels:
+
+- `true` and `'message'` log all debug output.
+- `'event'` logs only effective Comctx events.
+
+`comctx:message` entries show messages observed by the adapter. They are useful when checking adapter wiring, but they can be noisy because one message can be seen by multiple listeners.
+
+`comctx:event` entries show messages accepted by Comctx and routed into send or receive handling. Use this level when you only want to see the effective cross-context flow.
+
 ## Prefer comlink-style APIs? Or migrating from Comlink?
 
 [Comctx](https://github.com/molvqingtai/comctx)'s API design makes it easy to build your own layer with an API similar to [Comlink](https://github.com/GoogleChromeLabs/comlink). The following example is inspired by [`@wordpress/worker-threads`](https://github.com/WordPress/gutenberg/tree/trunk/packages/worker-threads):

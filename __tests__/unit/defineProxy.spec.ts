@@ -222,7 +222,7 @@ describe('defineProxy', () => {
     expect(result).toBe(123)
   })
 
-  test('should log adapter messages when debug is enabled', async () => {
+  test('should log message and event messages when debug is enabled', async () => {
     const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
     const eventHub = new EventHub()
 
@@ -255,16 +255,15 @@ describe('defineProxy', () => {
 
       await expect(proxy.getValue()).resolves.toBe(42)
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx:injector-test] sendMessage:',
-        expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
-          type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        }),
-        []
-      )
-      expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx:provider-test] onMessage:',
+        '%ccomctx:message%c %cinjector%c %csendMessage%c %capply%c',
+        'color: #0ea5e9',
+        '',
+        'color: #0891b2',
+        '',
+        'color: #f97316',
+        '',
+        'color: #2563eb',
+        '',
         expect.objectContaining({
           sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
           type: MESSAGE_TYPE.APPLY,
@@ -272,17 +271,47 @@ describe('defineProxy', () => {
         })
       )
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx:provider-test] sendMessage:',
+        '%ccomctx:event%c %cinjector%c %csendMessage%c %capply%c',
+        'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #0891b2; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #f97316; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #2563eb',
+        '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue'],
-          data: 42
-        }),
-        []
+          path: ['getValue']
+        })
       )
       expect(debugSpy).toHaveBeenCalledWith(
-        '[comctx:injector-test] onMessage:',
+        '%ccomctx:message%c %cprovider%c %conMessage%c %capply%c',
+        'color: #0ea5e9',
+        '',
+        'color: #8b5cf6',
+        '',
+        'color: #22c55e',
+        '',
+        'color: #2563eb',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue']
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:message%c %cprovider%c %csendMessage%c %capply%c',
+        'color: #0ea5e9',
+        '',
+        'color: #8b5cf6',
+        '',
+        'color: #f97316',
+        '',
+        'color: #2563eb',
+        '',
         expect.objectContaining({
           sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
           type: MESSAGE_TYPE.APPLY,
@@ -290,6 +319,208 @@ describe('defineProxy', () => {
           data: 42
         })
       )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:event%c %cprovider%c %conMessage%c %capply%c',
+        'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #8b5cf6; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #22c55e; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #2563eb',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue']
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:message%c %cinjector%c %conMessage%c %capply%c',
+        'color: #0ea5e9',
+        '',
+        'color: #0891b2',
+        '',
+        'color: #22c55e',
+        '',
+        'color: #2563eb',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue'],
+          data: 42
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:event%c %cinjector%c %conMessage%c %capply%c',
+        'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #0891b2; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #22c55e; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #2563eb',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue'],
+          data: 42
+        })
+      )
+    } finally {
+      debugSpy.mockRestore()
+    }
+  })
+
+  test('should log event onMessage actor instead of message sender', async () => {
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      name: 'provider-test',
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      name: 'injector-test',
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      heartbeatInterval: 10,
+      heartbeatTimeout: 100,
+      debug: true
+    })
+
+    try {
+      provide(providerAdapter)
+      const proxy = inject(injectorAdapter)
+
+      await expect(proxy.getValue()).resolves.toBe(42)
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:message%c %cprovider%c %conMessage%c %cping%c',
+        'color: #0ea5e9',
+        '',
+        'color: #8b5cf6',
+        '',
+        'color: #22c55e',
+        '',
+        'color: #eab308',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.PING
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:event%c %cprovider%c %conMessage%c %cping%c',
+        'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #8b5cf6; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #22c55e; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #eab308',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.PING
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:message%c %cinjector%c %conMessage%c %cpong%c',
+        'color: #0ea5e9',
+        '',
+        'color: #0891b2',
+        '',
+        'color: #22c55e',
+        '',
+        'color: #14b8a6',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          type: MESSAGE_TYPE.PONG
+        })
+      )
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:event%c %cinjector%c %conMessage%c %cpong%c',
+        'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #0891b2; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #22c55e; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #14b8a6',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          type: MESSAGE_TYPE.PONG
+        })
+      )
+    } finally {
+      debugSpy.mockRestore()
+    }
+  })
+
+  test('should filter debug logs by event level', async () => {
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      name: 'provider-test',
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      name: 'injector-test',
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      heartbeatCheck: false,
+      debug: 'event'
+    })
+
+    try {
+      provide(providerAdapter)
+      const proxy = inject(injectorAdapter)
+
+      await expect(proxy.getValue()).resolves.toBe(42)
+      expect(debugSpy).toHaveBeenCalledWith(
+        '%ccomctx:event%c %cinjector%c %csendMessage%c %capply%c',
+        'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #0891b2; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #fff; background: #f97316; border-radius: 3px; padding: 1px 4px;',
+        '',
+        'color: #2563eb',
+        '',
+        expect.objectContaining({
+          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          type: MESSAGE_TYPE.APPLY,
+          path: ['getValue']
+        })
+      )
+      expect(debugSpy.mock.calls.some(([format]) => String(format).includes('comctx:message'))).toBe(false)
     } finally {
       debugSpy.mockRestore()
     }

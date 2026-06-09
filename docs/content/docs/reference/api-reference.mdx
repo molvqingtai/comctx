@@ -270,6 +270,45 @@ This is useful when the Provider side may not be ready immediately, such as:
 
 If the Provider does not respond within the configured timeout, the call fails with a provider unavailable error.
 
+## `debug`
+
+`debug` enables console diagnostics for adapter integration and cross-context message flow.
+
+```ts
+const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+  debug: import.meta.env.DEV,
+})
+```
+
+The option accepts:
+
+```ts
+debug?: boolean | 'message' | 'event'
+```
+
+Values:
+
+- `false` disables debug output.
+- `true` logs both `comctx:message` and `comctx:event`.
+- `'message'` logs both `comctx:message` and `comctx:event`.
+- `'event'` logs only `comctx:event`.
+
+Log categories:
+
+- `comctx:message` shows messages seen by the adapter. These logs can include repeated listener notifications and messages that Comctx does not ultimately handle.
+- `comctx:event` shows messages accepted by Comctx and routed into send or receive handling.
+
+Examples:
+
+```txt
+comctx:message provider onMessage apply
+comctx:event provider onMessage apply
+comctx:event injector sendMessage ping
+```
+
+The second label is the current actor. For `sendMessage`, it is the side sending the message. For `onMessage`, it is the side currently receiving or handling the message.
+
 ## Adapter Interface
 
 To adapt Comctx to different communication channels, implement this interface:
