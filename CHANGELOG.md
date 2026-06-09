@@ -1,3 +1,10 @@
+## [1.7.4](https://github.com/molvqingtai/comctx/compare/v1.7.3...v1.7.4) (2026-06-09)
+
+
+### Bug Fixes
+
+* separate debug log levels ([c337ba8](https://github.com/molvqingtai/comctx/commit/c337ba82c9ed65832d1cec6aeb364e0f16f6457c))
+
 ## [1.7.3](https://github.com/molvqingtai/comctx/compare/v1.7.2...v1.7.3) (2026-06-09)
 
 
