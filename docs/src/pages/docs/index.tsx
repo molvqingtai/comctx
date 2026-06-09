@@ -14,8 +14,10 @@ import { getMDXComponents } from '@/components/mdx'
 
 export { getConfig } from './[...slugs]'
 
+const docsIndexSlugs = ['introduction']
+
 export default function DocsIndexPage() {
-  const page = source.getPage([])
+  const page = source.getPage(docsIndexSlugs)
   if (!page) unstable_notFound()
 
   const MDX = page.data.body
@@ -23,7 +25,7 @@ export default function DocsIndexPage() {
 
   return (
     <DocsPage toc={page.data.toc}>
-      <meta property="og:image" content={getPageImage([]).url} />
+      <meta property="og:image" content={getPageImage(docsIndexSlugs).url} />
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
       <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
