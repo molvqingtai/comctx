@@ -139,9 +139,9 @@ debug?: boolean | 'message' | 'event'
 ```
 
 - `false` disables debug output.
-- `true` logs all debug output.
-- `message` logs all debug output.
-- `event` logs only effective Comctx events.
+- `true` logs both message and event output.
+- `message` logs adapter-level message flow.
+- `event` logs effective Comctx events.
 
 ## 🧩 Advanced Usage
 
