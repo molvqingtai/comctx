@@ -1,4 +1,4 @@
 {
   "title": "Guides",
-  "pages": ["adapter", "transferable-objects", "separate-definitions", "comlink-like"]
+  "pages": ["adapter", "transferable-objects", "debug-logging", "separate-definitions", "comlink-like"]
 }
