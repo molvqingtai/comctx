@@ -1,6 +1,6 @@
 {
   "name": "@comctx/comctx",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "license": "MIT",
   "exports": "./core/dist/index.js",
   "publish": {

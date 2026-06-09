@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/molvqingtai/comctx/compare/v1.7.0...v1.7.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* **docs:** render docs index page ([cdee777](https://github.com/molvqingtai/comctx/commit/cdee777e1e21cc1413ab611633a9f6ab9cb8659b))
+
 # [1.7.0](https://github.com/molvqingtai/comctx/compare/v1.6.1...v1.7.0) (2026-06-08)
 
 
