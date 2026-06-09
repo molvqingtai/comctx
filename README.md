@@ -130,12 +130,18 @@ const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
 })
 ```
 
-`debug` accepts `true`, `'message'`, or `'event'`:
+**Levels**
 
-- `true` and `'message'` log both `comctx:message` and `comctx:event`.
-- `'event'` logs only effective Comctx events.
-- `comctx:message` shows messages seen by the adapter.
-- `comctx:event` shows messages accepted by Comctx and routed into send or receive handling.
+`debug` accepts:
+
+```typescript
+debug?: boolean | 'message' | 'event'
+```
+
+- `false` disables debug output.
+- `true` logs all debug output.
+- `message` logs all debug output.
+- `event` logs only effective Comctx events.
 
 ## 🧩 Advanced Usage
 

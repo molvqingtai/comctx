@@ -1,0 +1,50 @@
+---
+title: Debug Logging
+description: Inspect Comctx message flow while developing adapters or cross-context integrations.
+icon: Bug
+---
+
+Use `debug` when validating an adapter or investigating cross-context flow:
+
+```ts
+export const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
+  namespace: '__comctx-example__',
+  debug: import.meta.env.DEV
+})
+```
+
+For focused output, use a debug level:
+
+```ts
+debug: 'event'
+```
+
+## Levels
+
+`debug` accepts:
+
+```ts
+debug?: boolean | 'message' | 'event'
+```
+
+- `false` disables debug output.
+- `true` logs all debug output.
+- `message` logs all debug output.
+- `event` logs only effective Comctx events.
+
+## Labels
+
+Debug output uses two labels:
+
+- `comctx:message` shows messages observed by the adapter. These logs are useful when checking adapter wiring, but they can be noisy because one message can be seen by multiple listeners.
+- `comctx:event` shows messages accepted by Comctx and routed into send or receive handling.
+
+Examples:
+
+```txt
+comctx:message provider onMessage apply
+comctx:event provider onMessage apply
+comctx:event injector sendMessage ping
+```
+
+The second label is the current actor. For `sendMessage`, it is the side sending the message. For `onMessage`, it is the side currently receiving or handling the message.
