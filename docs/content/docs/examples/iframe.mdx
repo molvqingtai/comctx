@@ -149,50 +149,35 @@ The real example is organized like this:
       </Folder>
     </Files>
 
-    <Tabs items={['ProvideAdapter', 'InjectAdapter']}>
-      <Tab value="ProvideAdapter">
-        ```ts title="adapter.ts"
-        import { Adapter, SendMessage, OnMessage } from 'comctx'
+    ```ts title="adapter.ts"
+    import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-        export default class ProvideAdapter implements Adapter {
-          name = 'iframe-provider'
+    export type WindowEndpoint = Pick<Window, 'postMessage' | 'addEventListener' | 'removeEventListener'>
 
-          sendMessage: SendMessage = (message) => {
-            window.parent.postMessage(message, '*')
-          }
+    export class WindowAdapter implements Adapter {
+      constructor(
+        private window: WindowEndpoint,
+        public name?: string,
+        private targetOrigin = '*',
+      ) {}
 
-          onMessage: OnMessage = (callback) => {
-            const handler = (event: MessageEvent) => callback(event.data)
-            window.parent.addEventListener('message', handler)
-            return () => window.parent.removeEventListener('message', handler)
-          }
+      sendMessage: SendMessage = (message) => {
+        this.window.postMessage(message, this.targetOrigin)
+      }
+
+      onMessage: OnMessage = (callback) => {
+        const handler = (event: MessageEvent) => {
+          callback(event.data)
         }
-        ```
-      </Tab>
-      <Tab value="InjectAdapter">
-        ```ts title="adapter.ts"
-        import { Adapter, SendMessage, OnMessage } from 'comctx'
+        this.window.addEventListener('message', handler)
+        return () => this.window.removeEventListener('message', handler)
+      }
+    }
+    ```
 
-        export class InjectAdapter implements Adapter {
-          name = 'iframe-injector'
-
-          sendMessage: SendMessage = (message) => {
-            window.postMessage(message, '*')
-          }
-
-          onMessage: OnMessage = (callback) => {
-            const handler = (event: MessageEvent) => {
-              callback(event.data)
-            }
-            window.addEventListener('message', handler)
-            return () => window.removeEventListener('message', handler)
-          }
-        }
-        ```
-      </Tab>
-    </Tabs>
-
-    The real example keeps both adapters in the same file.
+    The same adapter works on both sides because the caller passes the window
+    endpoint explicitly. The iframe page passes `window.parent`; the host page
+    passes `window`.
 
     <Callout type="warning">
       <CalloutTitle>Production note</CalloutTitle>
@@ -220,7 +205,7 @@ The real example is organized like this:
     import './style.css'
     import { defineProxy } from 'comctx'
     import Counter from '../service/counter'
-    import ProvideAdapter from '../service/adapter'
+    import { WindowAdapter } from '../service/adapter'
 
     // Register the proxy object
     void (async () => {
@@ -229,7 +214,7 @@ The real example is organized like this:
         debug: import.meta.env.DEV
       })
 
-      const counter = provideCounter(new ProvideAdapter())
+      const counter = provideCounter(new WindowAdapter(window.parent, 'iframe-provider'))
 
       document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div>
@@ -271,7 +256,7 @@ The real example is organized like this:
     import createElement from '../utils/createElement'
 
     import { defineProxy } from 'comctx'
-    import { InjectAdapter } from '../service/adapter'
+    import { WindowAdapter } from '../service/adapter'
     import type Counter from '../service/counter'
 
     void (async () => {
@@ -281,7 +266,7 @@ The real example is organized like this:
       })
 
       // Use the proxy object
-      const counter = injectCounter(new InjectAdapter())
+      const counter = injectCounter(new WindowAdapter(window, 'iframe-injector'))
 
       const initValue = await counter.getValue()
 
@@ -381,7 +366,7 @@ The real example is organized like this:
 
     1. the host page calls `counter.increment()`
     2. Comctx turns that call into a message
-    3. the `InjectAdapter` sends the message through `window.postMessage`
+    3. the host `WindowAdapter` sends the message through `window.postMessage`
     4. the iframe page runs the real method on `Counter`
     5. the result is sent back
     6. both pages update through `onChange`
@@ -391,7 +376,7 @@ The real example is organized like this:
     - both sides use the same `namespace`
     - the host page loads `iframe.html`
     - the iframe page registers the Provider before handling calls
-    - the host page injects the proxy through `InjectAdapter`
+    - the host page injects the proxy through `WindowAdapter`
     - both sides listen on the expected window message channel
   </Step>
 </Steps>

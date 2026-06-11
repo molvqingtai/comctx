@@ -5,7 +5,7 @@ import './style.css'
 import createElement from '../utils/createElement'
 
 import { defineProxy } from 'comctx'
-import { InjectAdapter } from '../service/adapter'
+import { WindowAdapter } from '../service/adapter'
 import type Counter from '../service/counter'
 
 void (async () => {
@@ -15,7 +15,7 @@ void (async () => {
   })
 
   // Use the proxy object
-  const counter = injectCounter(new InjectAdapter())
+  const counter = injectCounter(new WindowAdapter(window, 'iframe-injector'))
 
   const initValue = await counter.getValue()
 

@@ -4,12 +4,13 @@ import './style.css'
 
 import createElement from './utils/createElement'
 
-import { InjectAdapter } from './service/adapter'
+import { WorkerAdapter } from './service/adapter'
 import { injectCounter } from './service/counter'
 
 void (async () => {
   // Use the proxy object
-  const counter = injectCounter(new InjectAdapter(new URL('./worker.ts', import.meta.url)))
+  const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
+  const counter = injectCounter(new WorkerAdapter(worker, 'worker-transfer-injector'))
 
   const initValue = await counter.getValue()
 

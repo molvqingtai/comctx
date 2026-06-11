@@ -234,8 +234,13 @@ import {
   type SendMessage
 } from 'comctx'
 
-class WorkerInjectAdapter implements Adapter {
-  constructor(private worker: Worker) {}
+type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
+
+class WorkerAdapter implements Adapter {
+  constructor(
+    private worker: WorkerEndpoint,
+    public name?: string
+  ) {}
 
   sendMessage: SendMessage = (message, transfer) => {
     this.worker.postMessage(message, transfer)
@@ -248,18 +253,6 @@ class WorkerInjectAdapter implements Adapter {
   }
 }
 
-class WorkerProvideAdapter implements Adapter {
-  sendMessage: SendMessage = (message, transfer) => {
-    self.postMessage(message, transfer)
-  }
-
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    self.addEventListener('message', handler)
-    return () => self.removeEventListener('message', handler)
-  }
-}
-
 export function wrap<T extends object>(worker: Worker) {
   const [, inject] = defineProxy(() => ({}) as T, {
     namespace: '__comlink_like__',
@@ -267,7 +260,7 @@ export function wrap<T extends object>(worker: Worker) {
     transfer: true
   })
 
-  return inject(new WorkerInjectAdapter(worker))
+  return inject(new WorkerAdapter(worker))
 }
 
 export function expose<T extends object>(target: T) {
@@ -277,7 +270,7 @@ export function expose<T extends object>(target: T) {
     transfer: true
   })
 
-  provide(new WorkerProvideAdapter())
+  provide(new WorkerAdapter(self))
 }
 ```
 **worker.ts**
@@ -344,19 +337,23 @@ This is an example of communication between the main page and a web worker.
 
 see: [web-worker-example](https://github.com/molvqingtai/comctx/tree/master/examples/web-worker)
 
-**InjectAdapter.ts**
+**WorkerAdapter.ts**
 
 ```typescript
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-export default class InjectAdapter implements Adapter {
-  worker: Worker
-  constructor(path: string | URL) {
-    this.worker = new Worker(path, { type: 'module' })
+export type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
+
+export default class WorkerAdapter implements Adapter {
+  constructor(
+    private worker: WorkerEndpoint,
+    public name?: string
+  ) {}
+
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
   }
-  sendMessage: SendMessage = (message) => {
-    this.worker.postMessage(message)
-  }
+
   onMessage: OnMessage = (callback) => {
     const handler = (event: MessageEvent) => callback(event.data)
     this.worker.addEventListener('message', handler)
@@ -365,32 +362,13 @@ export default class InjectAdapter implements Adapter {
 }
 ```
 
-**ProvideAdapter.ts**
-
-```typescript
-import { Adapter, SendMessage, OnMessage } from 'comctx'
-
-declare const self: DedicatedWorkerGlobalScope
-
-export default class ProvideAdapter implements Adapter {
-  sendMessage: SendMessage = (message) => {
-    self.postMessage(message)
-  }
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    self.addEventListener('message', handler)
-    return () => self.removeEventListener('message', handler)
-  }
-}
-```
-
 **web-worker.ts**
 
 ```typescript
 import { provideCounter } from './shared'
-import ProvideAdapter from './ProvideAdapter'
+import WorkerAdapter from './WorkerAdapter'
 
-const counter = provideCounter(new ProvideAdapter())
+const counter = provideCounter(new WorkerAdapter(self, 'web-worker-provider'))
 
 counter.onChange((value) => {
   console.log('WebWorker Value:', value)
@@ -401,9 +379,10 @@ counter.onChange((value) => {
 
 ```typescript
 import { injectCounter } from './shared'
-import InjectAdapter from './InjectAdapter'
+import WorkerAdapter from './WorkerAdapter'
 
-const counter = injectCounter(new InjectAdapter(new URL('./web-worker.ts', import.meta.url)))
+const worker = new Worker(new URL('./web-worker.ts', import.meta.url), { type: 'module' })
+const counter = injectCounter(new WorkerAdapter(worker, 'web-worker-injector'))
 
 counter.onChange((value) => {
   console.log('WebWorker Value:', value) // 1,0
@@ -510,36 +489,28 @@ This is an example of communication between the main page and an iframe.
 
 see: [iframe-example](https://github.com/molvqingtai/comctx/tree/master/examples/iframe)
 
-**InjectAdapter.ts**
+**WindowAdapter.ts**
 
 ```typescript
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-export default class InjectAdapter implements Adapter {
+export type WindowEndpoint = Pick<Window, 'postMessage' | 'addEventListener' | 'removeEventListener'>
+
+export default class WindowAdapter implements Adapter {
+  constructor(
+    private window: WindowEndpoint,
+    public name?: string,
+    private targetOrigin = '*'
+  ) {}
+
   sendMessage: SendMessage = (message) => {
-    window.postMessage(message, '*')
+    this.window.postMessage(message, this.targetOrigin)
   }
+
   onMessage: OnMessage = (callback) => {
     const handler = (event: MessageEvent) => callback(event.data)
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }
-}
-```
-
-**ProvideAdapter.ts**
-
-```typescript
-import { Adapter, SendMessage, OnMessage } from 'comctx'
-
-export default class ProvideAdapter implements Adapter {
-  sendMessage: SendMessage = (message) => {
-    window.parent.postMessage(message, '*')
-  }
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    window.parent.addEventListener('message', handler)
-    return () => window.parent.removeEventListener('message', handler)
+    this.window.addEventListener('message', handler)
+    return () => this.window.removeEventListener('message', handler)
   }
 }
 ```
@@ -548,9 +519,9 @@ export default class ProvideAdapter implements Adapter {
 
 ```typescript
 import { provideCounter } from './shared'
-import ProvideAdapter from './ProvideAdapter'
+import WindowAdapter from './WindowAdapter'
 
-const counter = provideCounter(new ProvideAdapter())
+const counter = provideCounter(new WindowAdapter(window.parent, 'iframe-provider'))
 
 counter.onChange((value) => {
   console.log('iframe Value:', value) // 1,0
@@ -561,9 +532,9 @@ counter.onChange((value) => {
 
 ```typescript
 import { injectCounter } from './shared'
-import InjectAdapter from './InjectAdapter'
+import WindowAdapter from './WindowAdapter'
 
-const counter = injectCounter(new InjectAdapter())
+const counter = injectCounter(new WindowAdapter(window, 'iframe-injector'))
 
 counter.onChange((value) => {
   console.log('iframe Value:', value) // 1,0
