@@ -1,7 +1,7 @@
 import './style.css'
 import { defineProxy } from 'comctx'
 import Counter from '../service/counter'
-import ProvideAdapter from '../service/adapter'
+import { WindowAdapter } from '../service/adapter'
 
 // Register the proxy object
 void (async () => {
@@ -10,7 +10,7 @@ void (async () => {
     debug: import.meta.env.DEV
   })
 
-  const counter = provideCounter(new ProvideAdapter())
+  const counter = provideCounter(new WindowAdapter(window.parent, 'iframe-provider'))
 
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div>

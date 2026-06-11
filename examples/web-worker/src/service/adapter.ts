@@ -1,30 +1,17 @@
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-declare const self: DedicatedWorkerGlobalScope
+export type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
 
-export class ProvideAdapter implements Adapter {
-  name = 'web-worker-provider'
+export class WorkerAdapter implements Adapter {
+  constructor(
+    private worker: WorkerEndpoint,
+    public name?: string
+  ) {}
 
-  sendMessage: SendMessage = (message) => {
-    self.postMessage(message)
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
   }
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    self.addEventListener('message', handler)
-    return () => self.removeEventListener('message', handler)
-  }
-}
 
-export class InjectAdapter implements Adapter {
-  name = 'web-worker-injector'
-  worker: Worker
-
-  constructor(path: string | URL) {
-    this.worker = new Worker(path, { type: 'module' })
-  }
-  sendMessage: SendMessage = (message) => {
-    this.worker.postMessage(message)
-  }
   onMessage: OnMessage = (callback) => {
     const handler = (event: MessageEvent) => callback(event.data)
     this.worker.addEventListener('message', handler)

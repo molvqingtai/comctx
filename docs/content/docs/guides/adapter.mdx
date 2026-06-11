@@ -102,46 +102,27 @@ export default class TransferAdapter implements Adapter {
 
 ## Web Worker example
 
-### Inject adapter
+### Worker adapter
 
-```ts title="InjectAdapter.ts"
+```ts title="WorkerAdapter.ts"
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-export default class InjectAdapter implements Adapter {
-  worker: Worker
+export type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
 
-  constructor(path: string | URL) {
-    this.worker = new Worker(path, { type: 'module' })
-  }
+export default class WorkerAdapter implements Adapter {
+  constructor(
+    private worker: WorkerEndpoint,
+    public name?: string
+  ) {}
 
-  sendMessage: SendMessage = (message) => {
-    this.worker.postMessage(message)
+  sendMessage: SendMessage = (message, transfer) => {
+    this.worker.postMessage(message, transfer)
   }
 
   onMessage: OnMessage = (callback) => {
     const handler = (event: MessageEvent) => callback(event.data)
     this.worker.addEventListener('message', handler)
     return () => this.worker.removeEventListener('message', handler)
-  }
-}
-```
-
-### Provide adapter
-
-```ts title="ProvideAdapter.ts"
-import { Adapter, SendMessage, OnMessage } from 'comctx'
-
-declare const self: DedicatedWorkerGlobalScope
-
-export default class ProvideAdapter implements Adapter {
-  sendMessage: SendMessage = (message) => {
-    self.postMessage(message)
-  }
-
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    self.addEventListener('message', handler)
-    return () => self.removeEventListener('message', handler)
   }
 }
 ```
@@ -204,38 +185,28 @@ export default class ProvideAdapter implements Adapter<MessageMeta> {
 
 ## Iframe example
 
-### Inject adapter
+### Iframe adapter
 
-```ts title="InjectAdapter.ts"
+```ts title="WindowAdapter.ts"
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-export default class InjectAdapter implements Adapter {
+export type WindowEndpoint = Pick<Window, 'postMessage' | 'addEventListener' | 'removeEventListener'>
+
+export default class WindowAdapter implements Adapter {
+  constructor(
+    private window: WindowEndpoint,
+    public name?: string,
+    private targetOrigin = '*'
+  ) {}
+
   sendMessage: SendMessage = (message) => {
-    window.postMessage(message, '*')
+    this.window.postMessage(message, this.targetOrigin)
   }
 
   onMessage: OnMessage = (callback) => {
     const handler = (event: MessageEvent) => callback(event.data)
-    window.addEventListener('message', handler)
-    return () => window.removeEventListener('message', handler)
-  }
-}
-```
-
-### Provide adapter
-
-```ts title="ProvideAdapter.ts"
-import { Adapter, SendMessage, OnMessage } from 'comctx'
-
-export default class ProvideAdapter implements Adapter {
-  sendMessage: SendMessage = (message) => {
-    window.parent.postMessage(message, '*')
-  }
-
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => callback(event.data)
-    window.parent.addEventListener('message', handler)
-    return () => window.parent.removeEventListener('message', handler)
+    this.window.addEventListener('message', handler)
+    return () => this.window.removeEventListener('message', handler)
   }
 }
 ```

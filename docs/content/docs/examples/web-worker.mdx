@@ -152,7 +152,7 @@ The real example is organized like this:
   <Step>
     ## Create the adapters
 
-    The real example keeps both adapters in the same file: `service/adapter.ts`.
+    The real example uses one worker adapter in `service/adapter.ts`.
 
     <Files>
       <Folder name="service" defaultOpen>
@@ -160,70 +160,32 @@ The real example is organized like this:
       </Folder>
     </Files>
 
-    <Tabs items={['ProvideAdapter', 'InjectAdapter']}>
-      <Tab value="ProvideAdapter">
-        ```ts title="adapter.ts"
-        import { Adapter, SendMessage, OnMessage } from 'comctx'
+    ```ts title="adapter.ts"
+    import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-        declare const self: DedicatedWorkerGlobalScope
+    export type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
 
-        export class ProvideAdapter implements Adapter {
-          name = 'web-worker-provider'
+    export class WorkerAdapter implements Adapter {
+      constructor(
+        private worker: WorkerEndpoint,
+        public name?: string,
+      ) {}
 
-          sendMessage: SendMessage = (message) => {
-            self.postMessage(message)
-          }
-          onMessage: OnMessage = (callback) => {
-            const handler = (event: MessageEvent) => callback(event.data)
-            self.addEventListener('message', handler)
-            return () => self.removeEventListener('message', handler)
-          }
-        }
-        ```
-      </Tab>
-      <Tab value="InjectAdapter">
-        ```ts title="adapter.ts"
-        import { Adapter, SendMessage, OnMessage } from 'comctx'
+      sendMessage: SendMessage = (message, transfer) => {
+        this.worker.postMessage(message, transfer)
+      }
 
-        export class InjectAdapter implements Adapter {
-          name = 'web-worker-injector'
-          worker: Worker
+      onMessage: OnMessage = (callback) => {
+        const handler = (event: MessageEvent) => callback(event.data)
+        this.worker.addEventListener('message', handler)
+        return () => this.worker.removeEventListener('message', handler)
+      }
+    }
+    ```
 
-          constructor(path: string | URL) {
-            this.worker = new Worker(path, { type: 'module' })
-          }
-          sendMessage: SendMessage = (message) => {
-            this.worker.postMessage(message)
-          }
-          onMessage: OnMessage = (callback) => {
-            const handler = (event: MessageEvent) => callback(event.data)
-            this.worker.addEventListener('message', handler)
-            return () => this.worker.removeEventListener('message', handler)
-          }
-        }
-        ```
-      </Tab>
-    </Tabs>
-
-    The worker-side adapter:
-
-    - sends messages with `self.postMessage`
-    - listens on `self`
-
-    The main-page adapter:
-
-    - creates the worker instance internally
-    - sends messages through `this.worker.postMessage`
-    - listens on the `Worker` instance
-
-    <Callout type="warning">
-      <CalloutTitle>Real example detail</CalloutTitle>
-      <CalloutDescription>
-        In this repository, the Injector adapter owns worker creation. That is
-        different from the earlier abstract docs version where worker creation
-        lived directly in `main.ts`.
-      </CalloutDescription>
-    </Callout>
+    The same adapter works on both sides because it only depends on the
+    worker-compatible message endpoint. The worker entry passes `self`; the
+    main page creates a `Worker` and passes that instance.
   </Step>
 
   <Step>
@@ -236,10 +198,10 @@ The real example is organized like this:
     </Files>
 
     ```ts title="worker.ts"
-    import { ProvideAdapter } from './service/adapter'
+    import { WorkerAdapter } from './service/adapter'
     import { provideCounter } from './service/counter'
 
-    const counter = provideCounter(new ProvideAdapter())
+    const counter = provideCounter(new WorkerAdapter(self, 'web-worker-provider'))
 
     counter.onChange((value) => {
       console.log('WebWorker Value:', value)
@@ -264,14 +226,15 @@ The real example is organized like this:
 
     import createElement from './utils/createElement'
 
-    import { InjectAdapter } from './service/adapter'
+    import { WorkerAdapter } from './service/adapter'
     import { injectCounter } from './service/counter'
     import './style.css'
 
     void (async () => {
-      const counter = injectCounter(
-        new InjectAdapter(new URL('./worker.ts', import.meta.url)),
-      )
+      const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+        type: 'module',
+      })
+      const counter = injectCounter(new WorkerAdapter(worker, 'web-worker-injector'))
 
       const initValue = await counter.getValue()
 
@@ -329,11 +292,11 @@ The real example is organized like this:
 
     Once everything is connected, the real example works like this:
 
-    1. `main.ts` creates an `InjectAdapter` with `new URL('./worker.ts', import.meta.url)`
+    1. `main.ts` creates a module `Worker`
     2. `injectCounter()` returns a proxy object
     3. button clicks call `counter.increment()` or `counter.decrement()`
     4. Comctx turns those calls into messages
-    5. the worker receives them through `ProvideAdapter`
+    5. the worker receives them through `WorkerAdapter`
     6. the real `Counter` instance updates its internal value
     7. `onChange` callbacks update both the worker log and the main-page UI
   </Step>
@@ -344,9 +307,9 @@ The real example is organized like this:
     A working setup should satisfy all of these:
 
     - `main.ts` and `worker.ts` use the same `namespace`
-    - the worker entry initializes `provideCounter(new ProvideAdapter())`
-    - the main page injects through `new InjectAdapter(new URL('./worker.ts', import.meta.url))`
-    - both adapters forward messages correctly
+    - the worker entry initializes `provideCounter(new WorkerAdapter(self, 'web-worker-provider'))`
+    - the main page injects through `new WorkerAdapter(worker, 'web-worker-injector')`
+    - the adapter forwards messages correctly on both sides
     - callback updates from `onChange` reach the main page
 
     <Callout type="info">

@@ -1,31 +1,12 @@
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-declare const self: DedicatedWorkerGlobalScope
+export type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
 
-export class ProvideAdapter implements Adapter {
-  name = 'worker-transfer-provider'
-
-  sendMessage: SendMessage = (message, transfer) => {
-    // Core will automatically extract transferables and pass as second parameter
-    self.postMessage(message, transfer)
-  }
-
-  onMessage: OnMessage = (callback) => {
-    const handler = (event: MessageEvent) => {
-      callback(event.data)
-    }
-    self.addEventListener('message', handler)
-    return () => self.removeEventListener('message', handler)
-  }
-}
-
-export class InjectAdapter implements Adapter {
-  name = 'worker-transfer-injector'
-  worker: Worker
-
-  constructor(path: string | URL) {
-    this.worker = new Worker(path, { type: 'module' })
-  }
+export class WorkerAdapter implements Adapter {
+  constructor(
+    private worker: WorkerEndpoint,
+    public name?: string
+  ) {}
 
   sendMessage: SendMessage = (message, transfer) => {
     // Core will automatically extract transferables and pass as second parameter
