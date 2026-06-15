@@ -50,6 +50,36 @@ describe('defineProxy', () => {
     }).toThrow('Invalid heartbeat config')
   })
 
+  test('should not cache provider target by default', () => {
+    const mockAdapter: Adapter = {
+      sendMessage: vi.fn(),
+      onMessage: vi.fn()
+    }
+    const context = vi.fn((value: number) => ({ value }))
+    const [provide] = defineProxy(context, { heartbeatCheck: false })
+
+    const firstTarget = provide(mockAdapter, 1)
+    const secondTarget = provide(mockAdapter, 2)
+
+    expect(context).toHaveBeenCalledTimes(2)
+    expect(firstTarget).toEqual({ value: 1 })
+    expect(secondTarget).toEqual({ value: 2 })
+    expect(secondTarget).not.toBe(firstTarget)
+  })
+
+  test('should not cache injector proxy by default', () => {
+    const mockAdapter: Adapter = {
+      sendMessage: vi.fn(),
+      onMessage: vi.fn()
+    }
+    const [, inject] = defineProxy(() => ({ getValue: () => 1 }), { heartbeatCheck: false })
+
+    const firstProxy = inject(mockAdapter)
+    const secondProxy = inject(mockAdapter)
+
+    expect(firstProxy).not.toBe(secondProxy)
+  })
+
   test('should support Reflect.has with backup option', () => {
     const mockAdapter: Adapter = {
       sendMessage: vi.fn(),
