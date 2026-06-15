@@ -1,3 +1,10 @@
+## [1.7.5](https://github.com/molvqingtai/comctx/compare/v1.7.4...v1.7.5) (2026-06-15)
+
+
+### Bug Fixes
+
+* **core:** stop caching proxy targets by default ([8a84566](https://github.com/molvqingtai/comctx/commit/8a84566c314e7f96910ca4b3126ef1b7bf2253e6))
+
 ## [1.7.4](https://github.com/molvqingtai/comctx/compare/v1.7.3...v1.7.4) (2026-06-09)
 
 
