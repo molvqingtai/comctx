@@ -409,23 +409,21 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: DebugAd
 }
 
 const provideProxy = <T extends Context>(context: T, options: Required<Options>) => {
-  let target: ReturnType<T>
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>, ...args: Parameters<T>) =>
-    (target ??= createProvide(
+    createProvide(
       context(...args) as ReturnType<T>,
       composeAdapter(adapter as unknown as Adapter, { ...options, actor: MESSAGE_SENDER_TYPE.PROVIDER }),
       options
-    ))
+    )
 }
 
 const injectProxy = <T extends Context>(context: T, options: Required<Options>) => {
-  let target: ReturnType<T>
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>) =>
-    (target ??= createInject(
+    createInject(
       (options.backup ? Object.freeze(context()) : {}) as ReturnType<T>,
       composeAdapter(adapter as unknown as Adapter, { ...options, actor: MESSAGE_SENDER_TYPE.INJECTOR }),
       options
-    ))
+    )
 }
 
 /**
