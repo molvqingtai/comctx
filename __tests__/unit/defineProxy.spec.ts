@@ -215,6 +215,61 @@ describe('defineProxy', () => {
     expect(sum).toBe(30)
   })
 
+  test.each([0, 1, 2])('should preserve the method receiver at nesting depth %i', async (depth) => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const createCounter = (value: number) => ({
+      value,
+      getValue() {
+        return this.value
+      },
+      async add(a: number, b: number) {
+        this.value += a + b
+        return this.value
+      }
+    })
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        ...createCounter(1),
+        child: {
+          ...createCounter(10),
+          nested: createCounter(100)
+        }
+      }),
+      { heartbeatCheck: false }
+    )
+
+    const target = provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+    const counter = [proxy, proxy.child, proxy.child.nested][depth]
+    const values = [1, 10, 100]
+    const getValue = counter.getValue
+
+    await expect(getValue()).resolves.toBe(values[depth])
+    await expect(counter.add(2, 3)).resolves.toBe(values[depth] + 5)
+    await expect(getValue()).resolves.toBe(values[depth] + 5)
+    expect([target.value, target.child.value, target.child.nested.value]).toEqual(
+      values.map((value, index) => (index === depth ? value + 5 : value))
+    )
+  })
+
   test('should support deep property access', async () => {
     const eventHub = new EventHub()
 
