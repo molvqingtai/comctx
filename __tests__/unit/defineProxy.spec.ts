@@ -3,6 +3,23 @@ import { defineProxy, MESSAGE_SENDER_TYPE, MESSAGE_TYPE } from 'comctx'
 import type { Adapter } from 'comctx'
 import EventHub from '@resreq/event-hub'
 
+class Counter {
+  value: number
+
+  constructor(value: number) {
+    this.value = value
+  }
+
+  getValue() {
+    return this?.value
+  }
+
+  async add(a: number, b: number) {
+    this.value += a + b
+    return this.value
+  }
+}
+
 describe('defineProxy', () => {
   test('should communicate between provider and injector', async () => {
     const eventHub = new EventHub()
@@ -234,31 +251,18 @@ describe('defineProxy', () => {
       }
     }
 
-    const [provide, inject] = defineProxy(
-      () => ({
-        value: 1,
-        getValue() {
-          return this.value
-        },
-        async add(a: number, b: number) {
-          this.value += a + b
-          return this.value
-        }
-      }),
-      { heartbeatCheck: false }
-    )
+    const [provide, inject] = defineProxy(() => new Counter(1), { heartbeatCheck: false })
 
     const target = provide(providerAdapter)
     const proxy = inject(injectorAdapter)
-    const getValue = proxy.getValue
 
-    const result = await getValue()
+    const result = await proxy.getValue()
     expect(result).toBe(1)
 
     const sum = await proxy.add(2, 3)
     expect(sum).toBe(6)
 
-    const updatedResult = await getValue()
+    const updatedResult = await proxy.getValue()
     expect(updatedResult).toBe(6)
     expect(target.value).toBe(6)
   })
@@ -285,31 +289,21 @@ describe('defineProxy', () => {
     const [provide, inject] = defineProxy(
       () => ({
         value: 1,
-        child: {
-          value: 10,
-          getValue() {
-            return this.value
-          },
-          async add(a: number, b: number) {
-            this.value += a + b
-            return this.value
-          }
-        }
+        child: new Counter(10)
       }),
       { heartbeatCheck: false }
     )
 
     const target = provide(providerAdapter)
     const proxy = inject(injectorAdapter)
-    const getValue = proxy.child.getValue
 
-    const result = await getValue()
+    const result = await proxy.child.getValue()
     expect(result).toBe(10)
 
     const sum = await proxy.child.add(2, 3)
     expect(sum).toBe(15)
 
-    const updatedResult = await getValue()
+    const updatedResult = await proxy.child.getValue()
     expect(updatedResult).toBe(15)
     expect(target.child.value).toBe(15)
     expect(target.value).toBe(1)
@@ -339,15 +333,110 @@ describe('defineProxy', () => {
         value: 1,
         child: {
           value: 10,
-          nested: {
-            value: 100,
-            getValue() {
-              return this.value
-            },
-            async add(a: number, b: number) {
-              this.value += a + b
-              return this.value
-            }
+          nested: new Counter(100)
+        }
+      }),
+      { heartbeatCheck: false }
+    )
+
+    const target = provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+
+    const result = await proxy.child.nested.getValue()
+    expect(result).toBe(100)
+
+    const sum = await proxy.child.nested.add(2, 3)
+    expect(sum).toBe(105)
+
+    const updatedResult = await proxy.child.nested.getValue()
+    expect(updatedResult).toBe(105)
+    expect(target.child.nested.value).toBe(105)
+    expect(target.child.value).toBe(10)
+    expect(target.value).toBe(1)
+  })
+
+  test('should keep detached proxy methods bound unlike native class methods', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        value: 1,
+        child: new Counter(10)
+      }),
+      { heartbeatCheck: false }
+    )
+
+    const target = provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+
+    const nativeResult = target.child.getValue()
+    expect(nativeResult).toBe(10)
+
+    // Native class methods lose their receiver when detached.
+    const nativeGetValue = target.child.getValue
+    const nativeAdd = target.child.add
+    expect(nativeGetValue()).toBeUndefined()
+    await expect(nativeAdd(2, 3)).rejects.toThrow(TypeError)
+
+    const result = await proxy.child.getValue()
+    expect(result).toBe(nativeResult)
+
+    // RPC methods retain their provider-side receiver through the stored path.
+    const getValue = proxy.child.getValue
+    const add = proxy.child.add
+
+    const detachedResult = await getValue()
+    expect(detachedResult).toBe(10)
+
+    const sum = await add(2, 3)
+    expect(sum).toBe(15)
+
+    const updatedResult = await getValue()
+    expect(updatedResult).toBe(15)
+    expect(target.child.value).toBe(15)
+    expect(target.value).toBe(1)
+  })
+
+  test('should preserve undefined this in bound class methods', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        foo: {
+          bar: {
+            getValue: new Counter(100).getValue.bind(undefined)
           }
         }
       }),
@@ -356,19 +445,12 @@ describe('defineProxy', () => {
 
     const target = provide(providerAdapter)
     const proxy = inject(injectorAdapter)
-    const getValue = proxy.child.nested.getValue
 
-    const result = await getValue()
-    expect(result).toBe(100)
+    const expected = target.foo.bar.getValue()
+    expect(expected).toBeUndefined()
 
-    const sum = await proxy.child.nested.add(2, 3)
-    expect(sum).toBe(105)
-
-    const updatedResult = await getValue()
-    expect(updatedResult).toBe(105)
-    expect(target.child.nested.value).toBe(105)
-    expect(target.child.value).toBe(10)
-    expect(target.value).toBe(1)
+    const result = await proxy.foo.bar.getValue()
+    expect(result).toBe(expected)
   })
 
   test('should support deep property access', async () => {
