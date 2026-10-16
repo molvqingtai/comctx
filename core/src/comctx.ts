@@ -281,9 +281,10 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
             }
           })
           // @ts-expect-error: initial write
-          _message.data = await (
-            _message.path?.reduce((acc, key) => acc[key], target) as unknown as (...args: any[]) => any
-          ).apply(target, mapArgs || [])
+          _message.data = await _message.path.reduce(
+            (that, key, index, path) => (index === path.length - 1 ? that[key](...(mapArgs ?? [])) : that[key]),
+            target
+          )
         } catch (error) {
           // @ts-expect-error: initial write
           _message.error = (error as Error).message
