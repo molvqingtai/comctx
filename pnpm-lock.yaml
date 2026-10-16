@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  fumadocs-core@16.9.3>mdast-util-to-markdown: 2.1.2
-
 importers:
 
   .:
@@ -154,13 +151,13 @@ importers:
         specifier: ^1.17.0
         version: 1.57.0(@types/react@19.3.0)(react@19.2.9)
       react:
-        specifier: ~19.2.9
+        specifier: ^19.2.9
         version: 19.2.9
       react-dom:
-        specifier: ~19.2.9
+        specifier: ^19.2.9
         version: 19.2.9(react@19.2.9)
       react-server-dom-webpack:
-        specifier: ~19.2.9
+        specifier: ^19.2.9
         version: 19.2.9(react-dom@19.2.9(react@19.2.9))(react@19.2.9)(webpack@5.111.1(esbuild@0.27.7)(lightningcss@1.33.0)(postcss@8.5.30)(uglify-js@3.19.3))
       remark:
         specifier: ^15.0.1

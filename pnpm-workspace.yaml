@@ -4,9 +4,6 @@ packages:
   - '__tests__'
   - '__tests__/fixtures/*'
   - 'examples/*'
-overrides:
-  # Fumadocs 16.9.3's stringifier recurses with mdast-util-to-markdown 2.2.
-  'fumadocs-core@16.9.3>mdast-util-to-markdown': 2.1.2
 allowBuilds:
   esbuild: true
   msw: true
