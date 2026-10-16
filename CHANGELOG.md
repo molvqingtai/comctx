@@ -1,3 +1,10 @@
+## [1.7.6](https://github.com/molvqingtai/comctx/compare/v1.7.5...v1.7.6) (2026-10-16)
+
+
+### Bug Fixes
+
+* **core:** preserve receivers when invoking nested methods ([63532ff](https://github.com/molvqingtai/comctx/commit/63532ff2e107ab30241d15dd7e3a052987de5a1d))
+
 ## [1.7.5](https://github.com/molvqingtai/comctx/compare/v1.7.4...v1.7.5) (2026-06-15)
 
 
