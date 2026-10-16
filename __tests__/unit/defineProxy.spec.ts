@@ -215,7 +215,7 @@ describe('defineProxy', () => {
     expect(sum).toBe(30)
   })
 
-  test.each([0, 1, 2])('should preserve the method receiver at nesting depth %i', async (depth) => {
+  test('should preserve this in root methods', async () => {
     const eventHub = new EventHub()
 
     const providerAdapter: Adapter = {
@@ -234,23 +234,15 @@ describe('defineProxy', () => {
       }
     }
 
-    const createCounter = (value: number) => ({
-      value,
-      getValue() {
-        return this.value
-      },
-      async add(a: number, b: number) {
-        this.value += a + b
-        return this.value
-      }
-    })
-
     const [provide, inject] = defineProxy(
       () => ({
-        ...createCounter(1),
-        child: {
-          ...createCounter(10),
-          nested: createCounter(100)
+        value: 1,
+        getValue() {
+          return this.value
+        },
+        async add(a: number, b: number) {
+          this.value += a + b
+          return this.value
         }
       }),
       { heartbeatCheck: false }
@@ -258,16 +250,125 @@ describe('defineProxy', () => {
 
     const target = provide(providerAdapter)
     const proxy = inject(injectorAdapter)
-    const counter = [proxy, proxy.child, proxy.child.nested][depth]
-    const values = [1, 10, 100]
-    const getValue = counter.getValue
+    const getValue = proxy.getValue
 
-    await expect(getValue()).resolves.toBe(values[depth])
-    await expect(counter.add(2, 3)).resolves.toBe(values[depth] + 5)
-    await expect(getValue()).resolves.toBe(values[depth] + 5)
-    expect([target.value, target.child.value, target.child.nested.value]).toEqual(
-      values.map((value, index) => (index === depth ? value + 5 : value))
+    const result = await getValue()
+    expect(result).toBe(1)
+
+    const sum = await proxy.add(2, 3)
+    expect(sum).toBe(6)
+
+    const updatedResult = await getValue()
+    expect(updatedResult).toBe(6)
+    expect(target.value).toBe(6)
+  })
+
+  test('should preserve this in nested methods', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        value: 1,
+        child: {
+          value: 10,
+          getValue() {
+            return this.value
+          },
+          async add(a: number, b: number) {
+            this.value += a + b
+            return this.value
+          }
+        }
+      }),
+      { heartbeatCheck: false }
     )
+
+    const target = provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+    const getValue = proxy.child.getValue
+
+    const result = await getValue()
+    expect(result).toBe(10)
+
+    const sum = await proxy.child.add(2, 3)
+    expect(sum).toBe(15)
+
+    const updatedResult = await getValue()
+    expect(updatedResult).toBe(15)
+    expect(target.child.value).toBe(15)
+    expect(target.value).toBe(1)
+  })
+
+  test('should preserve this in deeply nested methods', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      }
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      }
+    }
+
+    const [provide, inject] = defineProxy(
+      () => ({
+        value: 1,
+        child: {
+          value: 10,
+          nested: {
+            value: 100,
+            getValue() {
+              return this.value
+            },
+            async add(a: number, b: number) {
+              this.value += a + b
+              return this.value
+            }
+          }
+        }
+      }),
+      { heartbeatCheck: false }
+    )
+
+    const target = provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+    const getValue = proxy.child.nested.getValue
+
+    const result = await getValue()
+    expect(result).toBe(100)
+
+    const sum = await proxy.child.nested.add(2, 3)
+    expect(sum).toBe(105)
+
+    const updatedResult = await getValue()
+    expect(updatedResult).toBe(105)
+    expect(target.child.nested.value).toBe(105)
+    expect(target.child.value).toBe(10)
+    expect(target.value).toBe(1)
   })
 
   test('should support deep property access', async () => {
