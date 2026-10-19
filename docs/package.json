@@ -19,7 +19,7 @@
     "ai": "^6.0.197",
     "class-variance-authority": "^0.7.1",
     "flexsearch": "^0.8.212",
-    "fumadocs-core": "16.9.3",
+    "fumadocs-core": "16.17.4",
     "fumadocs-mdx": "15.0.11",
     "fumadocs-ui": "16.9.3",
     "hast-util-to-jsx-runtime": "^2.3.6",
