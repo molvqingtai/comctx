@@ -1,3 +1,10 @@
+## [1.7.7](https://github.com/molvqingtai/comctx/compare/v1.7.6...v1.7.7) (2026-11-04)
+
+
+### Bug Fixes
+
+* **core:** remove the broken backup option ([b21b21a](https://github.com/molvqingtai/comctx/commit/b21b21ab0ad150a9d701bab3033487b553cfaca7))
+
 ## [1.7.6](https://github.com/molvqingtai/comctx/compare/v1.7.5...v1.7.6) (2026-10-16)
 
 
