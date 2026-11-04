@@ -126,19 +126,6 @@ Callbacks are supported across the boundary.
 proxyCounter.onChange(console.log)
 ```
 
-### `backup`
-
-Because the Injector is a virtual proxy, operations such as `Reflect.has(proxyCounter, 'key')` may need a static template on the Injector side.
-
-You can enable `backup` for that:
-
-```ts
-const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
-  namespace: '__comctx-example__',
-  backup: true,
-})
-```
-
 ## Documented options
 
 ## `namespace`
