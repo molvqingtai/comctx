@@ -31,7 +31,7 @@ Comctx provides:
 - **Zero Copy** transfer for transferable objects
 - **Type Safety** with TypeScript
 - **Lightweight** core size
-- **Fault Tolerance** with backup implementations and heartbeat checks
+- **Fault Tolerance** with connection heartbeat checks
 
 ## What is a Provider?
 
@@ -119,20 +119,6 @@ When `transfer: true` is enabled, transferable objects are automatically extract
 This allows zero-copy transfer when the runtime and transport support it.
 
 By default, values are copied using [structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
-
-## What does `backup: true` do?
-
-The Injector side is a virtual proxy.
-
-If you need support for operations such as:
-
-```ts
-Reflect.has(proxyCounter, 'key')
-```
-
-you can enable `backup: true`.
-
-This creates a static copy on the Injector side that acts as a template without actually running the real implementation there.
 
 ## What does `heartbeatCheck` do?
 
