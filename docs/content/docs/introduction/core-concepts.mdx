@@ -231,20 +231,6 @@ const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
 })
 ```
 
-## Backup
-
-Because the Injector is a virtual proxy, some reflective operations do not behave like a normal local object.
-
-If you need support for operations such as:
-
-```ts
-Reflect.has(proxyCounter, 'key')
-```
-
-you can enable `backup: true`.
-
-This creates a static copy on the Injector side that serves as a template without actually running.
-
 ## Deep access through the proxy
 
 The Injector proxy can forward deep method calls as long as the access stays inside the service shape.
@@ -259,7 +245,7 @@ can still be resolved through the proxy channel.
 
 What still matters is the same core rule: the Injector is not working with a normal local object.
 
-That means method calls are the safest mental model, while reflective access and direct local mutation may need options such as `backup`.
+That means method calls are the safest mental model. Reflective operations such as `Reflect.has`, `in`, and `Object.keys`, as well as direct local mutation, are not supported on the Injector side.
 
 ## Next steps
 

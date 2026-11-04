@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/d1601b54-2669-45d7-b1e5-9bbde1186856
 - **Zero Copy** - Automatic extraction and zero-copy transfer of transferable objects
 - **Type Safety** - Full TypeScript integration
 - **Lightweight** - 2KB gzipped core
-- **Fault Tolerance** - Backup implementations & connection heartbeat checks
+- **Fault Tolerance** - Connection heartbeat checks
 
 ## 🚀 Quick Start
 
@@ -115,7 +115,7 @@ const count = await proxyCounter.getValue()
 
 - The injector side cannot directly use `get` and `set`; it must interact with `Counter` via asynchronous methods, but callbacks are supported.
 
-- Since the injector is a virtual proxy, to support operations like `Reflect.has(proxyCounter, 'key')`, you can set `backup` to `true`, which creates a static copy on the injector side that serves as a template without actually running.
+- Since the injector is a virtual proxy, reflective operations such as `Reflect.has(proxyCounter, 'key')` do not behave like they would on a normal local object. Treat the injector as a method-call surface only.
 
 - `provideCounter` and `injectCounter` require user-defined adapters for different environments that implement `onMessage` and `sendMessage` methods.
 

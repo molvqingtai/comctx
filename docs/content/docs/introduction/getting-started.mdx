@@ -145,7 +145,7 @@ This page follows the core Comctx quick start flow.
     - `originCounter` and `proxyCounter` share the same `Counter` instance.
     - The Injector side cannot directly use `get` and `set`; it must interact with `Counter` via asynchronous methods.
     - Callbacks are supported.
-    - To support operations like `Reflect.has(proxyCounter, 'key')`, you can set `backup` to `true`.
+    - The Injector proxy only supports method calls; reflective operations like `Reflect.has(proxyCounter, 'key')` are not supported.
     - `provideCounter` and `injectCounter` require user-defined adapters for different environments that implement `onMessage` and `sendMessage`.
   </Step>
 </Steps>

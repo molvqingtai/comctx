@@ -75,7 +75,7 @@ const features = [
   },
   {
     title: 'Fault Tolerance',
-    description: 'Supports backup implementations and connection heartbeat checks.'
+    description: 'Supports connection heartbeat checks.'
   }
 ]
 

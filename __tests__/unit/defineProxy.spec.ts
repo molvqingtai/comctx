@@ -97,21 +97,6 @@ describe('defineProxy', () => {
     expect(firstProxy).not.toBe(secondProxy)
   })
 
-  test('should support Reflect.has with backup option', () => {
-    const mockAdapter: Adapter = {
-      sendMessage: vi.fn(),
-      onMessage: vi.fn()
-    }
-
-    const [, injectWithoutBackup] = defineProxy(() => ({ test: () => 1 }), { backup: false })
-    const proxyWithoutBackup = injectWithoutBackup(mockAdapter)
-    expect(Reflect.has(proxyWithoutBackup, 'test')).toBe(false)
-
-    const [, injectWithBackup] = defineProxy(() => ({ test: () => 1 }), { backup: true })
-    const proxyWithBackup = injectWithBackup(mockAdapter)
-    expect(Reflect.has(proxyWithBackup, 'test')).toBe(true)
-  })
-
   test('should support callback functions', async () => {
     const eventHub = new EventHub()
 
