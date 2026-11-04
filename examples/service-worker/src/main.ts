@@ -10,7 +10,9 @@ import { injectCounter } from './service/counter'
 void (async () => {
   // Use the proxy object
   const counter = injectCounter(
-    new InjectAdapter(import.meta.env.MODE === 'production' ? '/service-worker.js' : '/dev-sw.js?dev-sw')
+    new InjectAdapter(
+      import.meta.env.MODE === 'production' ? '/service-worker.js' : '/dev-sw.js?dev-sw',
+    ),
   )
 
   const initValue = await counter.getValue()
@@ -29,7 +31,7 @@ void (async () => {
           <h4 id="background-value">ServiceWorker Value: ${initValue} </h4>
         </div>
       </div>
-    `)
+    `),
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
@@ -42,6 +44,7 @@ void (async () => {
 
   counter.onChange((value) => {
     document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
-    document.querySelector<HTMLDivElement>('#background-value')!.textContent = `ServiceWorker Value: ${value}`
+    document.querySelector<HTMLDivElement>('#background-value')!.textContent =
+      `ServiceWorker Value: ${value}`
   })
 })().catch(console.error)

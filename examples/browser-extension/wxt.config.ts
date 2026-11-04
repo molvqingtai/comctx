@@ -8,12 +8,12 @@ export default defineConfig({
   entrypointsDir: 'app',
   imports: false,
   webExt: {
-    startUrls: ['https://www.example.com/']
+    startUrls: ['https://www.example.com/'],
   },
   manifest: () => {
     return {
       name: name,
-      permissions: ['tabs', 'webNavigation']
+      permissions: ['tabs', 'webNavigation'],
     }
-  }
+  },
 })

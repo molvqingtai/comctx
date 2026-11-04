@@ -6,7 +6,7 @@ import {
   DocsPage,
   DocsTitle,
   MarkdownCopyButton,
-  ViewOptionsPopover
+  ViewOptionsPopover,
 } from 'fumadocs-ui/layouts/docs/page'
 import { unstable_notFound } from 'waku/router/server'
 import { gitConfig } from '@/lib/shared'
@@ -25,10 +25,10 @@ export default function DocsIndexPage() {
 
   return (
     <DocsPage toc={page.data.toc}>
-      <meta property="og:image" content={getPageImage(docsIndexSlugs).url} />
+      <meta property='og:image' content={getPageImage(docsIndexSlugs).url} />
       <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
-      <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+      <DocsDescription className='mb-0'>{page.data.description}</DocsDescription>
+      <div className='flex flex-row gap-2 items-center border-b pt-2 pb-6'>
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
           markdownUrl={markdownUrl}
@@ -38,7 +38,7 @@ export default function DocsIndexPage() {
       <DocsBody>
         <MDX
           components={getMDXComponents({
-            a: createRelativeLink(source, page)
+            a: createRelativeLink(source, page),
           })}
         />
       </DocsBody>

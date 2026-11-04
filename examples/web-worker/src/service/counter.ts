@@ -26,7 +26,10 @@ export class Counter {
   }
 }
 
-export const [provideCounter, injectCounter] = defineProxy((initialValue: number = 0) => new Counter(initialValue), {
-  namespace: '__web-worker-example__',
-  debug: import.meta.env.DEV
-})
+export const [provideCounter, injectCounter] = defineProxy(
+  (initialValue: number = 0) => new Counter(initialValue),
+  {
+    namespace: '__web-worker-example__',
+    debug: import.meta.env.DEV,
+  },
+)

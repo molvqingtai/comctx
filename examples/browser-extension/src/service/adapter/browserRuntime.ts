@@ -47,8 +47,8 @@ export class ProvideAdapter implements Adapter<MessageMeta> {
         ...message,
         meta: {
           ...message.meta,
-          injector: message?.sender?.name as MessageMeta['injector']
-        }
+          injector: message?.sender?.name as MessageMeta['injector'],
+        },
       })
     }
     browser.runtime.onMessage.addListener(handler)
@@ -64,7 +64,7 @@ export class InjectAdapter implements Adapter<MessageMeta> {
   sendMessage: SendMessage<MessageMeta> = (message) => {
     browser.runtime.sendMessage(browser.runtime.id, {
       ...message,
-      meta: { url: document.location.href }
+      meta: { url: document.location.href },
     })
   }
   onMessage: OnMessage<MessageMeta> = (callback) => {

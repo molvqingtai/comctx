@@ -28,7 +28,7 @@ void (async () => {
           <h4 id="worker-value">WebWorker Stream Value: ${initValue} </h4>
         </div>
       </div>
-    `)
+    `),
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
@@ -47,7 +47,8 @@ void (async () => {
       const { value, done } = await reader.read()
       if (done) break
       document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
-      document.querySelector<HTMLDivElement>('#worker-value')!.textContent = `WebWorker Stream Value: ${value}`
+      document.querySelector<HTMLDivElement>('#worker-value')!.textContent =
+        `WebWorker Stream Value: ${value}`
     }
   }
 

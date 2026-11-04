@@ -14,8 +14,8 @@ describe('iframe test', async () => {
         expect(iframeValueRef.textContent).toBe('0')
       },
       {
-        container: main
-      }
+        container: main,
+      },
     )
   })
 
@@ -33,8 +33,8 @@ describe('iframe test', async () => {
         expect(iframeValueRef.textContent).toBe('1')
       },
       {
-        container: main
-      }
+        container: main,
+      },
     )
   })
 
@@ -52,8 +52,8 @@ describe('iframe test', async () => {
         expect(iframeValueRef.textContent).toBe('-1')
       },
       {
-        container: main
-      }
+        container: main,
+      },
     )
   })
 })

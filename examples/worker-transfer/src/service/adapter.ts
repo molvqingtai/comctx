@@ -1,11 +1,14 @@
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-export type WorkerEndpoint = Pick<Worker, 'postMessage' | 'addEventListener' | 'removeEventListener'>
+export type WorkerEndpoint = Pick<
+  Worker,
+  'postMessage' | 'addEventListener' | 'removeEventListener'
+>
 
 export class WorkerAdapter implements Adapter {
   constructor(
     private worker: WorkerEndpoint,
-    public name?: string
+    public name?: string,
   ) {}
 
   sendMessage: SendMessage = (message, transfer) => {

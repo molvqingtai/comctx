@@ -19,7 +19,7 @@ export function getMDXComponents(components?: MDXComponents) {
     TabsContent,
     TabsList,
     TabsTrigger,
-    ...components
+    ...components,
   } satisfies MDXComponents
 }
 

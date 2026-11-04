@@ -10,7 +10,8 @@ export class ProvideAdapter implements Adapter {
      * Compatible with Firefox
      * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts#cloneinto
      */
-    const detail = typeof cloneInto === 'function' ? cloneInto(message, document.defaultView) : message
+    const detail =
+      typeof cloneInto === 'function' ? cloneInto(message, document.defaultView) : message
 
     document.dispatchEvent(new CustomEvent('message', { detail }))
   }

@@ -6,7 +6,7 @@ import { docsContentRoute, docsImageRoute, docsRoute } from './shared'
 export const source = loader({
   source: docs.toFumadocsSource(),
   baseUrl: docsRoute,
-  plugins: [lucideIconsPlugin()]
+  plugins: [lucideIconsPlugin()],
 })
 
 export function getPageImage(slugs: string[]) {
@@ -14,7 +14,7 @@ export function getPageImage(slugs: string[]) {
 
   return {
     segments,
-    url: `${docsImageRoute}/${segments.join('/')}`
+    url: `${docsImageRoute}/${segments.join('/')}`,
   }
 }
 
@@ -23,7 +23,7 @@ export function getPageMarkdownUrl(page: (typeof source)['$inferPage']) {
 
   return {
     segments,
-    url: `${docsContentRoute}/${segments.join('/')}`
+    url: `${docsContentRoute}/${segments.join('/')}`,
   }
 }
 

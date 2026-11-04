@@ -14,16 +14,18 @@ export async function GET(_: Request, { params }: ApiContext<'/og/docs/[...slugs
     {
       width: 1200,
       height: 630,
-      format: 'webp'
-    }
+      format: 'webp',
+    },
   )
 }
 
 export async function getConfig() {
-  const pages = source.generateParams().map((item) => (item.lang ? [item.lang, ...item.slug] : item.slug))
+  const pages = source
+    .generateParams()
+    .map((item) => (item.lang ? [item.lang, ...item.slug] : item.slug))
 
   return {
     render: 'static' as const,
-    staticPaths: pages
+    staticPaths: pages,
   } as const
 }

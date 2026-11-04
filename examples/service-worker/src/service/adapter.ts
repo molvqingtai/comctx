@@ -23,7 +23,9 @@ export class InjectAdapter implements Adapter {
   workbox: Workbox
 
   constructor(path: string) {
-    this.workbox = new Workbox(path, { type: import.meta.env.MODE === 'production' ? 'classic' : 'module' })
+    this.workbox = new Workbox(path, {
+      type: import.meta.env.MODE === 'production' ? 'classic' : 'module',
+    })
     this.workbox.register()
   }
   sendMessage: SendMessage = (message) => {

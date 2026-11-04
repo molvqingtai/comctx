@@ -11,7 +11,7 @@ import type Counter from '../service/counter'
 void (async () => {
   const [, injectCounter] = defineProxy(() => ({}) as Counter, {
     namespace: '__iframe-example__',
-    debug: import.meta.env.DEV
+    debug: import.meta.env.DEV,
   })
 
   // Use the proxy object
@@ -31,7 +31,7 @@ void (async () => {
         </div>
       </div>
     `),
-    document.querySelector<HTMLDivElement>('#iframe')!
+    document.querySelector<HTMLDivElement>('#iframe')!,
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {

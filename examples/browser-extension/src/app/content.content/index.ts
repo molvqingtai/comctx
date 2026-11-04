@@ -16,7 +16,7 @@ export default defineContentScript({
   async main(ctx) {
     const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
       namespace: browser.runtime.id,
-      debug: import.meta.env.DEV
+      debug: import.meta.env.DEV,
     })
 
     const counter = injectBackgroundCounter(new BrowserRuntimeInjectAdapter('content'))
@@ -24,7 +24,7 @@ export default defineContentScript({
     // The bridge exposed to injected-script
     const [provideContentCounter] = defineProxy(() => counter, {
       namespace: '__comctx-example__',
-      debug: import.meta.env.DEV
+      debug: import.meta.env.DEV,
     })
 
     provideContentCounter(new CustomEventProvideAdapter('content'))
@@ -64,11 +64,12 @@ export default defineContentScript({
         counter.onChange((value) => {
           console.log('content-script:', value)
           app.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
-          app.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
+          app.querySelector<HTMLDivElement>('#background-value')!.textContent =
+            `Background Value: ${value}`
         })
         container.append(app)
-      }
+      },
     })
     ui.mount()
-  }
+  },
 })

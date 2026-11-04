@@ -1,4 +1,8 @@
-const setIntervalImmediate = <T extends any[] = any[]>(handler: (...args: T) => void, delay?: number, ...args: T) => {
+const setIntervalImmediate = <T extends any[] = any[]>(
+  handler: (...args: T) => void,
+  delay?: number,
+  ...args: T
+) => {
   let timer = setTimeout(() => {
     clearTimeout(timer)
     handler(...args)
