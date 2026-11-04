@@ -32,7 +32,6 @@ export interface Options {
   heartbeatInterval?: number
   heartbeatTimeout?: number
   transfer?: boolean
-  backup?: boolean
   debug?: boolean | DebugLevel
 }
 
@@ -419,9 +418,10 @@ const provideProxy = <T extends Context>(context: T, options: Required<Options>)
 }
 
 const injectProxy = <T extends Context>(context: T, options: Required<Options>) => {
+  // The injector never runs `context`; it only needs it to infer the service shape.
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>) =>
     createInject(
-      (options.backup ? Object.freeze(context()) : {}) as ReturnType<T>,
+      {} as ReturnType<T>,
       composeAdapter(adapter as unknown as Adapter, { ...options, actor: MESSAGE_SENDER_TYPE.INJECTOR }),
       options
     )
@@ -439,7 +439,6 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
  *   - heartbeatInterval: The frequency at which to request heartbeats in milliseconds (default: 300).
  *   - heartbeatTimeout: Max wait time for heartbeat response in milliseconds (default: 1000).
  *   - transfer: Whether to use transferable objects for message transfer (default is false).
- *   - backup: Whether to use a backup implementation of the original object in the injector (default is false).
  *   - debug: Whether to log debug output. Use true for message and event logs, 'message' for adapter-level message logs, and 'event' for effective Comctx event logs (default is false).
  * @returns Returns a tuple containing two elements:
  *   - [0] provideProxy: Accepts an adapter and creates a provider proxy.
@@ -464,7 +463,6 @@ export const defineProxy = <T extends Context>(context: T, options?: Options) =>
     heartbeatInterval: options?.heartbeatInterval ?? 300,
     heartbeatTimeout: options?.heartbeatTimeout ?? 1000,
     transfer: options?.transfer ?? false,
-    backup: options?.backup ?? false,
     debug: options?.debug ?? false
   }
 
