@@ -216,7 +216,7 @@ This is useful when the Provider side may not be available immediately, for exam
 - worker code is still loading asynchronously
 - your runtime creates the message channel before the real service is ready
 
-This behavior is controlled by `heartbeatCheck`.
+This behavior is controlled by `readinessCheck`.
 
 When enabled, the Injector waits for the Provider to respond before continuing.
 
@@ -227,7 +227,7 @@ If you are building a wrapper where you do not want that behavior, you can disab
 ```ts
 const [provideCounter, injectCounter] = defineProxy(() => new Counter(), {
   namespace: '__comctx-example__',
-  heartbeatCheck: false,
+  readinessCheck: false,
 })
 ```
 

@@ -147,7 +147,7 @@ class WorkerAdapter implements Adapter {
 export function wrap<T extends object>(worker: Worker) {
   const [, inject] = defineProxy(() => ({}) as T, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true
   })
 
@@ -157,7 +157,7 @@ export function wrap<T extends object>(worker: Worker) {
 export function expose<T extends object>(target: T) {
   const [provide] = defineProxy(() => target, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true
   })
 

@@ -35,9 +35,9 @@ export type Context<T extends Record<string, any> = Record<string, any>> = (...a
 
 export interface Options {
   namespace?: string
-  heartbeatCheck?: boolean
-  heartbeatInterval?: number
-  heartbeatTimeout?: number
+  readinessCheck?: boolean
+  readinessInterval?: number
+  readinessTimeout?: number
   transfer?: boolean
   debug?: boolean | DebugLevel
 }
@@ -69,11 +69,11 @@ export const isProxy = (target: any) => {
   )
 }
 
-const heartbeatCheck = async (adapter: DebugAdapter, options: Required<Options>) => {
+const readinessCheck = async (adapter: DebugAdapter, options: Required<Options>) => {
   const { promise, resolve, reject } = Promise.withResolvers<void>()
   const offMessages = new Set<OffMessage>()
 
-  const clearHeartbeatInterval = setIntervalImmediate(async () => {
+  const clearReadinessInterval = setIntervalImmediate(async () => {
     try {
       const messageId = uuid()
       const offMessage = await adapter.onMessage((message) => {
@@ -107,19 +107,19 @@ const heartbeatCheck = async (adapter: DebugAdapter, options: Required<Options>)
     } catch (error) {
       reject(error)
     }
-  }, options.heartbeatInterval)
+  }, options.readinessInterval)
 
-  const heartbeatTimeout = setTimeout(
+  const readinessTimer = setTimeout(
     () =>
       reject(
-        new Error(`Provider unavailable: heartbeat check timeout ${options.heartbeatTimeout}ms.`),
+        new Error(`Provider unavailable: readiness check timeout ${options.readinessTimeout}ms.`),
       ),
-    options.heartbeatTimeout,
+    options.readinessTimeout,
   )
 
   await promise.finally(() => {
-    clearHeartbeatInterval()
-    clearTimeout(heartbeatTimeout)
+    clearReadinessInterval()
+    clearTimeout(readinessTimer)
     offMessages.forEach((offMessage) => offMessage())
     offMessages.clear()
   })
@@ -221,15 +221,15 @@ const withDebugLogger = (adapter: Adapter, options: DebugOptions): DebugAdapter 
   }
 }
 
-const withHeartbeatCheck = (adapter: DebugAdapter, options: Required<Options>): DebugAdapter => ({
+const withReadinessCheck = (adapter: DebugAdapter, options: Required<Options>): DebugAdapter => ({
   name: adapter.name,
   sendMessage: async (message, transfer) => {
     if (
-      options.heartbeatCheck &&
+      options.readinessCheck &&
       message.sender.type === MESSAGE_SENDER_TYPE.INJECTOR &&
       message.type === MESSAGE_TYPE.APPLY
     ) {
-      await heartbeatCheck(adapter, options)
+      await readinessCheck(adapter, options)
     }
 
     adapter.debugLog?.({ level: 'event', method: 'sendMessage', message })
@@ -242,7 +242,7 @@ const withHeartbeatCheck = (adapter: DebugAdapter, options: Required<Options>): 
 })
 
 const composeAdapter = (adapter: Adapter, options: DebugOptions) => {
-  return withHeartbeatCheck(
+  return withReadinessCheck(
     withDebugLogger(withExtractTransfer(withCheckMessage(adapter), options), options),
     options,
   )
@@ -476,9 +476,9 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
  *   - For the injector: Returns an object used for TypeScript type inference (actual calls are made through RPC proxy).
  * @param options - Configuration options:
  *   - namespace: The communication namespace used to isolate messages between different proxy instances (default is '__comctx__').
- *   - heartbeatCheck: Enable provider readiness check (default: true).
- *   - heartbeatInterval: The frequency at which to request heartbeats in milliseconds (default: 300).
- *   - heartbeatTimeout: Max wait time for heartbeat response in milliseconds (default: 1000).
+ *   - readinessCheck: Enable provider readiness check (default: true).
+ *   - readinessInterval: The frequency at which to request readiness checks in milliseconds (default: 300).
+ *   - readinessTimeout: Max wait time for readiness response in milliseconds (default: 1000).
  *   - transfer: Whether to use transferable objects for message transfer (default is false).
  *   - debug: Whether to log debug output. Use true for message and event logs, 'message' for adapter-level message logs, and 'event' for effective Comctx event logs (default is false).
  * @returns Returns a tuple containing two elements:
@@ -500,16 +500,16 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
 export const defineProxy = <T extends Context>(context: T, options?: Options) => {
   const mergedOptions = {
     namespace: options?.namespace ?? '__comctx__',
-    heartbeatCheck: options?.heartbeatCheck ?? true,
-    heartbeatInterval: options?.heartbeatInterval ?? 300,
-    heartbeatTimeout: options?.heartbeatTimeout ?? 1000,
+    readinessCheck: options?.readinessCheck ?? true,
+    readinessInterval: options?.readinessInterval ?? 300,
+    readinessTimeout: options?.readinessTimeout ?? 1000,
     transfer: options?.transfer ?? false,
     debug: options?.debug ?? false,
   }
 
-  if (mergedOptions.heartbeatTimeout <= mergedOptions.heartbeatInterval) {
+  if (mergedOptions.readinessTimeout <= mergedOptions.readinessInterval) {
     throw new Error(
-      `Invalid heartbeat config: timeout (${mergedOptions.heartbeatTimeout}ms) must exceed interval (${mergedOptions.heartbeatInterval}ms).`,
+      `Invalid readiness config: timeout (${mergedOptions.readinessTimeout}ms) must exceed interval (${mergedOptions.readinessInterval}ms).`,
     )
   }
 

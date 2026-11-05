@@ -227,14 +227,14 @@ export default class TransferAdapter implements Adapter {
 
 Wrap it with [`ReadableStream.from`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream/from_static) before returning or sending it so it can be transferred.
 
-## `heartbeatCheck`
+## `readinessCheck`
 
-`heartbeatCheck` enables a provider readiness check.
+`readinessCheck` enables a provider readiness check.
 
 ```ts
 const [, inject] = defineProxy(() => ({}) as T, {
   namespace: '__comlink_like__',
-  heartbeatCheck: false,
+  readinessCheck: false,
   transfer: true,
 })
 ```
@@ -242,12 +242,12 @@ const [, inject] = defineProxy(() => ({}) as T, {
 ```ts
 const [provide] = defineProxy(() => target, {
   namespace: '__comlink_like__',
-  heartbeatCheck: false,
+  readinessCheck: false,
   transfer: true,
 })
 ```
 
-When enabled, the Injector sends heartbeat messages and waits for the Provider to respond before continuing.
+When enabled, the Injector sends readiness messages and waits for the Provider to respond before continuing.
 
 This is useful when the Provider side may not be ready immediately, such as:
 
@@ -414,7 +414,7 @@ class WorkerAdapter implements Adapter {
 export function wrap<T extends object>(worker: Worker) {
   const [, inject] = defineProxy(() => ({}) as T, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true,
   })
 
@@ -424,7 +424,7 @@ export function wrap<T extends object>(worker: Worker) {
 export function expose<T extends object>(target: T) {
   const [provide] = defineProxy(() => target, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true,
   })
 
