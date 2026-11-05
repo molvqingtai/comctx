@@ -257,6 +257,34 @@ This is useful when the Provider side may not be ready immediately, such as:
 
 If the Provider does not respond within the configured timeout, the call fails with a provider unavailable error.
 
+## `responseTimeout`
+
+`responseTimeout` bounds how long the Injector waits for the Provider to answer a call, in milliseconds.
+
+```ts
+const [, inject] = defineProxy(() => ({}) as T, {
+  namespace: '__comctx-example__',
+  responseTimeout: 5000,
+})
+```
+
+The clock starts **after** `sendMessage` has settled, so readiness probing and transport cost are not charged against it. A slow channel does not shrink the time the Provider has to answer; the budget applies only to the wait that follows a successfully dispatched call.
+
+```text
+call starts
+  └─ readiness check   (readinessTimeout governs this)
+  └─ sendMessage       (transport; not counted)
+  └─ wait for answer   (responseTimeout governs this)  ← starts here
+```
+
+When the budget runs out, the call rejects with `Response timed out after <n>ms.` and the response listener is detached, so a late answer cannot resurface.
+
+Defaults to `0`, which disables the timeout. Set a positive value to enable it.
+
+:::note
+Only the Injector waits for an answer, so the option has no effect on the Provider side.
+:::
+
 ## `debug`
 
 `debug` enables console diagnostics for adapter integration and cross-context message flow.
