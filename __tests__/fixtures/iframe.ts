@@ -5,6 +5,9 @@ import { findByTestId } from '@testing-library/dom'
 const browser = new Browser({
   settings: {
     enableJavaScriptEvaluation: true,
+    // happy-dom 21 stopped loading iframe pages by default, so the iframe example
+    // stays blank and none of its `data-testid` nodes exist unless this is opted into.
+    enableIframePageLoading: true,
     suppressInsecureJavaScriptEnvironmentWarning: true,
     fetch: {
       virtualServers: [
