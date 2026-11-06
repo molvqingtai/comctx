@@ -42,7 +42,7 @@ class WorkerAdapter implements Adapter {
 export function wrap<T extends object>(worker: Worker) {
   const [, inject] = defineProxy(() => ({}) as T, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true
   })
 
@@ -52,7 +52,7 @@ export function wrap<T extends object>(worker: Worker) {
 export function expose<T extends object>(target: T) {
   const [provide] = defineProxy(() => target, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true
   })
 
@@ -98,7 +98,7 @@ This wrapper keeps the Comctx transport model, but exposes a smaller API surface
 - `wrap(worker)` creates an Injector-side proxy
 - `expose(api)` registers the Provider-side implementation
 - both sides use the same `namespace`
-- `heartbeatCheck: false` disables the provider readiness check, which is useful when the Provider side may not be ready immediately, such as when worker code or iframe content loads asynchronously
+- `readinessCheck: false` disables the provider readiness check, which is useful when the Provider side may not be ready immediately, such as when worker code or iframe content loads asynchronously
 - `transfer: true` enables transferable object support
 
 ## When to use this pattern

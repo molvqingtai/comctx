@@ -45,7 +45,7 @@ describe('defineProxy', () => {
         getValue: async () => 42,
         add: async (a: number, b: number) => a + b,
       }),
-      { heartbeatCheck: false },
+      { readinessCheck: false },
     )
 
     provide(providerAdapter)
@@ -58,13 +58,13 @@ describe('defineProxy', () => {
     expect(sum).toBe(30)
   })
 
-  test('should throw error for invalid heartbeat config', () => {
+  test('should throw error for invalid readiness config', () => {
     expect(() => {
       defineProxy(() => ({}), {
-        heartbeatInterval: 1000,
-        heartbeatTimeout: 500,
+        readinessInterval: 1000,
+        readinessTimeout: 500,
       })
-    }).toThrow('Invalid heartbeat config')
+    }).toThrow('Invalid readiness config')
   })
 
   test('should not cache provider target by default', () => {
@@ -73,7 +73,7 @@ describe('defineProxy', () => {
       onMessage: vi.fn(),
     }
     const context = vi.fn((value: number) => ({ value }))
-    const [provide] = defineProxy(context, { heartbeatCheck: false })
+    const [provide] = defineProxy(context, { readinessCheck: false })
 
     const firstTarget = provide(mockAdapter, 1)
     const secondTarget = provide(mockAdapter, 2)
@@ -89,7 +89,7 @@ describe('defineProxy', () => {
       sendMessage: vi.fn(),
       onMessage: vi.fn(),
     }
-    const [, inject] = defineProxy(() => ({ getValue: () => 1 }), { heartbeatCheck: false })
+    const [, inject] = defineProxy(() => ({ getValue: () => 1 }), { readinessCheck: false })
 
     const firstProxy = inject(mockAdapter)
     const secondProxy = inject(mockAdapter)
@@ -122,7 +122,7 @@ describe('defineProxy', () => {
           callback(100)
         },
       }),
-      { heartbeatCheck: false },
+      { readinessCheck: false },
     )
 
     provide(providerAdapter)
@@ -143,15 +143,15 @@ describe('defineProxy', () => {
     }
 
     const [, inject] = defineProxy(() => ({ getValue: () => 42 }), {
-      heartbeatCheck: true,
-      heartbeatInterval: 100,
-      heartbeatTimeout: 200,
+      readinessCheck: true,
+      readinessInterval: 100,
+      readinessTimeout: 200,
     })
 
     const proxy = inject(injectorAdapter)
 
     await expect(proxy.getValue()).rejects.toThrow(
-      'Provider unavailable: heartbeat check timeout 200ms',
+      'Provider unavailable: readiness check timeout 200ms',
     )
   })
 
@@ -199,7 +199,7 @@ describe('defineProxy', () => {
         getValue: async () => 42,
         add: async (a: number, b: number) => a + b,
       }),
-      { heartbeatCheck: false },
+      { readinessCheck: false },
     )
 
     provideBackground(backgroundProviderAdapter)
@@ -207,7 +207,7 @@ describe('defineProxy', () => {
 
     // Content Script bridges background proxy to page
     const [provideContentScript, injectContentScript] = defineProxy(() => backgroundProxy, {
-      heartbeatCheck: false,
+      readinessCheck: false,
     })
 
     provideContentScript(contentScriptProviderAdapter)
@@ -248,7 +248,7 @@ describe('defineProxy', () => {
           nested: new Counter(100),
         },
       }),
-      { heartbeatCheck: false },
+      { readinessCheck: false },
     )
 
     const target = provide(providerAdapter)
@@ -309,7 +309,7 @@ describe('defineProxy', () => {
           },
         },
       }),
-      { heartbeatCheck: false },
+      { readinessCheck: false },
     )
 
     const target = provide(providerAdapter)
@@ -349,7 +349,7 @@ describe('defineProxy', () => {
           },
         },
       }),
-      { heartbeatCheck: false },
+      { readinessCheck: false },
     )
 
     provide(providerAdapter)
@@ -382,7 +382,7 @@ describe('defineProxy', () => {
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
-      heartbeatCheck: false,
+      readinessCheck: false,
       debug: true,
     })
 
@@ -555,8 +555,8 @@ describe('defineProxy', () => {
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
-      heartbeatInterval: 10,
-      heartbeatTimeout: 100,
+      readinessInterval: 10,
+      readinessTimeout: 100,
       debug: true,
     })
 
@@ -665,7 +665,7 @@ describe('defineProxy', () => {
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
-      heartbeatCheck: false,
+      readinessCheck: false,
       debug: 'event',
     })
 
@@ -724,7 +724,7 @@ describe('defineProxy', () => {
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
-      heartbeatCheck: false,
+      readinessCheck: false,
       debug: 'message',
     })
 

@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/d1601b54-2669-45d7-b1e5-9bbde1186856
 - **Zero Copy** - Automatic extraction and zero-copy transfer of transferable objects
 - **Type Safety** - Full TypeScript integration
 - **Lightweight** - 2KB gzipped core
-- **Fault Tolerance** - Connection heartbeat checks
+- **Fault Tolerance** - Connection readiness checks
 
 ## 🚀 Quick Start
 
@@ -256,7 +256,7 @@ class WorkerAdapter implements Adapter {
 export function wrap<T extends object>(worker: Worker) {
   const [, inject] = defineProxy(() => ({}) as T, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true
   })
 
@@ -266,7 +266,7 @@ export function wrap<T extends object>(worker: Worker) {
 export function expose<T extends object>(target: T) {
   const [provide] = defineProxy(() => target, {
     namespace: '__comlink_like__',
-    heartbeatCheck: false,
+    readinessCheck: false,
     transfer: true
   })
 

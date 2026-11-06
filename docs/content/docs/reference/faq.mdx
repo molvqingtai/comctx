@@ -31,7 +31,7 @@ Comctx provides:
 - **Zero Copy** transfer for transferable objects
 - **Type Safety** with TypeScript
 - **Lightweight** core size
-- **Fault Tolerance** with connection heartbeat checks
+- **Fault Tolerance** with connection readiness checks
 
 ## What is a Provider?
 
@@ -120,13 +120,13 @@ This allows zero-copy transfer when the runtime and transport support it.
 
 By default, values are copied using [structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm).
 
-## What does `heartbeatCheck` do?
+## What does `readinessCheck` do?
 
-`heartbeatCheck` is used for provider readiness checks.
+`readinessCheck` is used for provider readiness checks.
 
 It helps when the Provider side may not be ready immediately, such as when worker code is still loading asynchronously or when an iframe has not finished loading yet.
 
-The Comlink-style wrapper example also shows `heartbeatCheck: false`, which indicates that this option can be disabled when you do not want that readiness check behavior.
+The Comlink-style wrapper example also shows `readinessCheck: false`, which indicates that this option can be disabled when you do not want that readiness check behavior.
 
 ## Can I define Provider and Injector separately?
 
@@ -150,7 +150,7 @@ That example uses:
 
 - `defineProxy`
 - custom worker adapters
-- `heartbeatCheck: false`
+- `readinessCheck: false`
 - `transfer: true`
 
 ## Which examples are available in this repository?
