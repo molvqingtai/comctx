@@ -38,6 +38,7 @@ export interface Options {
   readinessCheck?: boolean
   readinessInterval?: number
   readinessTimeout?: number
+  responseTimeout?: number
   transfer?: boolean
   debug?: boolean | DebugLevel
 }
@@ -67,6 +68,19 @@ export const isProxy = (target: any) => {
     (typeof target === 'object' || typeof target === 'function') &&
     target[PROXY_MARKER] === true
   )
+}
+
+const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
+  if (!ms) return promise
+
+  const { promise: timeout, reject } = Promise.withResolvers<never>()
+  const timer = setTimeout(() => reject(new Error(`Response timed out after ${ms}ms.`)), ms)
+
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 const readinessCheck = async (adapter: DebugAdapter, options: Required<Options>) => {
@@ -339,6 +353,68 @@ const createInject = <T extends Record<string, any>>(
   adapter: DebugAdapter,
   options: Required<Options>,
 ) => {
+  const call = async (path: string[], args: any[]) => {
+    const callbackIds: string[] = []
+    const mapArgs = args.map((arg) => {
+      if (typeof arg !== 'function') return arg
+
+      const callbackId = uuid()
+      callbackIds.push(callbackId)
+      adapter.onMessage((message) => {
+        const _message = message as Message
+        if (_message.namespace !== options.namespace) return
+        if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
+        if (_message.type !== MESSAGE_TYPE.CALLBACK) return
+        if (_message.id !== callbackId) return
+        adapter.debugLog?.({
+          level: 'event',
+          method: 'onMessage',
+          message: _message,
+          actor: MESSAGE_SENDER_TYPE.INJECTOR,
+        })
+        arg(..._message.data)
+      })
+      return callbackId
+    })
+
+    const messageId = uuid()
+    const { promise, resolve, reject } = Promise.withResolvers<Message['data']>()
+
+    const offMessage = await adapter.onMessage((message) => {
+      const _message = message as Message
+      if (_message.namespace !== options.namespace) return
+      if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
+      if (_message.type !== MESSAGE_TYPE.APPLY) return
+      if (_message.id !== messageId) return
+      adapter.debugLog?.({
+        level: 'event',
+        method: 'onMessage',
+        message: _message,
+        actor: MESSAGE_SENDER_TYPE.INJECTOR,
+      })
+      _message.error ? reject(new Error(_message.error)) : resolve(_message.data)
+    })
+
+    const applyMessage: Message = {
+      type: MESSAGE_TYPE.APPLY,
+      sender: { type: MESSAGE_SENDER_TYPE.INJECTOR, name: adapter.name },
+      id: messageId,
+      path,
+      args: mapArgs,
+      meta: {},
+      callbackIds,
+      timeStamp: Date.now(),
+      namespace: options.namespace,
+    }
+
+    try {
+      await adapter.sendMessage(applyMessage, [])
+      return await withTimeout(promise, options.responseTimeout)
+    } finally {
+      await offMessage?.()
+    }
+  }
+
   const createProxy = (target: T, path: string[]) => {
     const proxy = new Proxy<T>(target, {
       get(_target, key, receiver) {
@@ -374,66 +450,7 @@ const createInject = <T extends Record<string, any>>(
         return createProxy((() => {}) as unknown as T, [...path, key] as string[])
       },
       apply(_target, _this, args) {
-        return new Promise<Message>(async (resolve, reject) => {
-          try {
-            const callbackIds: string[] = []
-            const mapArgs = args.map((arg) => {
-              if (typeof arg === 'function') {
-                const callbackId = uuid()
-                callbackIds.push(callbackId)
-                adapter.onMessage((message) => {
-                  const _message = message as Message
-                  if (_message.namespace !== options.namespace) return
-                  if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
-                  if (_message.type !== MESSAGE_TYPE.CALLBACK) return
-                  if (_message.id !== callbackId) return
-                  adapter.debugLog?.({
-                    level: 'event',
-                    method: 'onMessage',
-                    message: _message,
-                    actor: MESSAGE_SENDER_TYPE.INJECTOR,
-                  })
-                  arg(..._message.data)
-                })
-                return callbackId
-              } else {
-                return arg
-              }
-            })
-
-            const messageId = uuid()
-            const offMessage = await adapter.onMessage((message) => {
-              const _message = message as Message
-              if (_message.namespace !== options.namespace) return
-              if (_message.sender.type !== MESSAGE_SENDER_TYPE.PROVIDER) return
-              if (_message.type !== MESSAGE_TYPE.APPLY) return
-              if (_message.id !== messageId) return
-              adapter.debugLog?.({
-                level: 'event',
-                method: 'onMessage',
-                message: _message,
-                actor: MESSAGE_SENDER_TYPE.INJECTOR,
-              })
-              _message.error ? reject(new Error(_message.error)) : resolve(_message.data)
-              offMessage?.()
-            })
-
-            const applyMessage: Message = {
-              type: MESSAGE_TYPE.APPLY,
-              sender: { type: MESSAGE_SENDER_TYPE.INJECTOR, name: adapter.name },
-              id: messageId,
-              path,
-              args: mapArgs,
-              meta: {},
-              callbackIds,
-              timeStamp: Date.now(),
-              namespace: options.namespace,
-            }
-            await adapter.sendMessage(applyMessage, [])
-          } catch (error) {
-            reject(error)
-          }
-        })
+        return call(path, args)
       },
     })
 
@@ -479,6 +496,7 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
  *   - readinessCheck: Enable provider readiness check (default: true).
  *   - readinessInterval: The frequency at which to request readiness checks in milliseconds (default: 300).
  *   - readinessTimeout: Max wait time for readiness response in milliseconds (default: 1000).
+ *   - responseTimeout: Max time to wait for the provider to answer a call after it has been sent, in milliseconds; 0 disables it (default: 0).
  *   - transfer: Whether to use transferable objects for message transfer (default is false).
  *   - debug: Whether to log debug output. Use true for message and event logs, 'message' for adapter-level message logs, and 'event' for effective Comctx event logs (default is false).
  * @returns Returns a tuple containing two elements:
@@ -503,6 +521,7 @@ export const defineProxy = <T extends Context>(context: T, options?: Options) =>
     readinessCheck: options?.readinessCheck ?? true,
     readinessInterval: options?.readinessInterval ?? 300,
     readinessTimeout: options?.readinessTimeout ?? 1000,
+    responseTimeout: options?.responseTimeout ?? 0,
     transfer: options?.transfer ?? false,
     debug: options?.debug ?? false,
   }

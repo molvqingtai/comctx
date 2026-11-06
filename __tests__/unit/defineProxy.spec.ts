@@ -155,6 +155,118 @@ describe('defineProxy', () => {
     )
   })
 
+  test('should reject when the provider never answers the call', async () => {
+    const injectorAdapter: Adapter = {
+      sendMessage: vi.fn(),
+      onMessage: vi.fn(),
+    }
+
+    const [, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      readinessCheck: false,
+      responseTimeout: 50,
+    })
+
+    const proxy = inject(injectorAdapter)
+
+    await expect(proxy.getValue()).rejects.toThrow('Response timed out after 50ms')
+  })
+
+  test('should leave calls that answer within the timeout untouched', async () => {
+    const eventHub = new EventHub()
+
+    const providerAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('provider-to-injector', message),
+      onMessage: (callback) => {
+        eventHub.on('injector-to-provider', callback)
+        return () => eventHub.off('injector-to-provider', callback)
+      },
+    }
+
+    const injectorAdapter: Adapter = {
+      sendMessage: (message) => eventHub.emit('injector-to-provider', message),
+      onMessage: (callback) => {
+        eventHub.on('provider-to-injector', callback)
+        return () => eventHub.off('provider-to-injector', callback)
+      },
+    }
+
+    const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      readinessCheck: false,
+      responseTimeout: 1000,
+    })
+
+    provide(providerAdapter)
+    const proxy = inject(injectorAdapter)
+
+    await expect(proxy.getValue()).resolves.toBe(42)
+  })
+
+  test('should not start the response timeout before the call has been sent', async () => {
+    let releaseSend: () => void = () => {}
+    const sendGate = new Promise<void>((resolve) => {
+      releaseSend = resolve
+    })
+
+    const injectorAdapter: Adapter = {
+      sendMessage: () => sendGate,
+      onMessage: vi.fn(),
+    }
+
+    const [, inject] = defineProxy(() => ({ getValue: async () => 42 }), {
+      readinessCheck: false,
+      responseTimeout: 100,
+    })
+
+    const proxy = inject(injectorAdapter)
+
+    const startedAt = Date.now()
+    const pending = proxy.getValue()
+
+    // Hold the transport for longer than the timeout. If the budget were charged from
+    // the start of the call, the deadline would already be blown by the time the send
+    // completes, and the call would reject immediately on release.
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    releaseSend()
+
+    let settled = false
+    pending.catch(() => {
+      settled = true
+    })
+
+    await expect(pending).rejects.toThrow('Response timed out after 100ms')
+    expect(settled).toBe(true)
+
+    // A slow transport must not consume the response budget. The full answer window
+    // has to remain available afterwards, so the total is transport plus budget.
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(240)
+  })
+
+  test('should detach the response listener once the call times out', async () => {
+    let registered = 0
+    let removed = 0
+
+    const injectorAdapter: Adapter = {
+      sendMessage: vi.fn(),
+      onMessage: () => {
+        registered += 1
+        return () => {
+          removed += 1
+        }
+      },
+    }
+
+    const [, inject] = defineProxy(() => ({ getValue: () => 42 }), {
+      readinessCheck: false,
+      responseTimeout: 50,
+    })
+
+    const proxy = inject(injectorAdapter)
+
+    await expect(proxy.getValue()).rejects.toThrow('Response timed out after 50ms')
+    expect(registered).toBe(1)
+    expect(removed).toBe(1)
+  })
+
   test('should support nested proxy (proxy wrapping proxy)', async () => {
     const backgroundEventHub = new EventHub()
     const contentScriptEventHub = new EventHub()
