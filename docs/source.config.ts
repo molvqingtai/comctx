@@ -8,16 +8,16 @@ export const docs = defineDocs({
   docs: {
     schema: pageSchema,
     postprocess: {
-      includeProcessedMarkdown: true
-    }
+      includeProcessedMarkdown: true,
+    },
   },
   meta: {
-    schema: metaSchema
-  }
+    schema: metaSchema,
+  },
 })
 
 export default defineConfig({
   mdxOptions: {
     // MDX options
-  }
+  },
 })

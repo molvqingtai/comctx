@@ -9,7 +9,7 @@ import {
   type ReactNode,
   Suspense,
   use,
-  useDeferredValue
+  useDeferredValue,
 } from 'react'
 import { Fragment, jsx, jsxs } from 'react/jsx-runtime'
 import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock'
@@ -37,9 +37,9 @@ export function rehypeWrapWords() {
           type: 'element',
           tagName: 'span',
           properties: {
-            class: 'animate-fd-fade-in'
+            class: 'animate-fd-fade-in',
           },
-          children: [{ type: 'text', value: word }]
+          children: [{ type: 'text', value: word }],
         }
       })
 
@@ -47,7 +47,7 @@ export function rehypeWrapWords() {
         type: 'element',
         tagName: 'span',
         properties: {},
-        children: newNodes
+        children: newNodes,
       } satisfies RootContent)
       return 'skip'
     })
@@ -70,10 +70,10 @@ function createProcessor(): Processor {
         components: {
           ...defaultMdxComponents,
           pre: Pre,
-          img: undefined // use JSX
-        }
+          img: undefined, // use JSX
+        },
       })
-    }
+    },
   }
 }
 
@@ -100,7 +100,7 @@ export function Markdown({ text }: { text: string }) {
   const deferredText = useDeferredValue(text)
 
   return (
-    <Suspense fallback={<p className="invisible">{text}</p>}>
+    <Suspense fallback={<p className='invisible'>{text}</p>}>
       <Renderer text={deferredText} />
     </Suspense>
   )

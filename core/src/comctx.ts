@@ -1,7 +1,14 @@
 import uuid from '@/utils/uuid'
 import setIntervalImmediate from '@/utils/setIntervalImmediate'
 import extractTransfer from '@/utils/extractTransfer'
-import { checkMessage, Message, MESSAGE_SENDER_TYPE, MESSAGE_TYPE, MessageMeta, MessageSenderType } from './protocol'
+import {
+  checkMessage,
+  Message,
+  MESSAGE_SENDER_TYPE,
+  MESSAGE_TYPE,
+  MessageMeta,
+  MessageSenderType,
+} from './protocol'
 
 const PROXY_MARKER = Symbol('PROXY_MARKER')
 
@@ -11,11 +18,11 @@ export type OffMessage = () => MaybePromise<void>
 
 export type SendMessage<T extends MessageMeta = MessageMeta> = (
   message: Message<T>,
-  transfer: Transferable[]
+  transfer: Transferable[],
 ) => MaybePromise<void>
 
 export type OnMessage<T extends MessageMeta = MessageMeta> = (
-  callback: (message?: Partial<Message<T>>) => void
+  callback: (message?: Partial<Message<T>>) => void,
 ) => MaybePromise<OffMessage | void>
 
 export interface Adapter<T extends MessageMeta = MessageMeta> {
@@ -56,7 +63,9 @@ type DebugOptions = Required<Options> & {
 
 export const isProxy = (target: any) => {
   return (
-    target !== null && (typeof target === 'object' || typeof target === 'function') && target[PROXY_MARKER] === true
+    target !== null &&
+    (typeof target === 'object' || typeof target === 'function') &&
+    target[PROXY_MARKER] === true
   )
 }
 
@@ -77,7 +86,7 @@ const heartbeatCheck = async (adapter: DebugAdapter, options: Required<Options>)
           level: 'event',
           method: 'onMessage',
           message: _message,
-          actor: MESSAGE_SENDER_TYPE.INJECTOR
+          actor: MESSAGE_SENDER_TYPE.INJECTOR,
         })
         resolve()
       })
@@ -91,7 +100,7 @@ const heartbeatCheck = async (adapter: DebugAdapter, options: Required<Options>)
         path: [],
         meta: {},
         namespace: options.namespace,
-        timeStamp: Date.now()
+        timeStamp: Date.now(),
       }
       adapter.debugLog?.({ level: 'event', method: 'sendMessage', message: pingMessage })
       adapter.sendMessage(pingMessage, [])
@@ -101,8 +110,11 @@ const heartbeatCheck = async (adapter: DebugAdapter, options: Required<Options>)
   }, options.heartbeatInterval)
 
   const heartbeatTimeout = setTimeout(
-    () => reject(new Error(`Provider unavailable: heartbeat check timeout ${options.heartbeatTimeout}ms.`)),
-    options.heartbeatTimeout
+    () =>
+      reject(
+        new Error(`Provider unavailable: heartbeat check timeout ${options.heartbeatTimeout}ms.`),
+      ),
+    options.heartbeatTimeout,
   )
 
   await promise.finally(() => {
@@ -123,7 +135,7 @@ const withCheckMessage = (adapter: Adapter): Adapter => ({
       if (!checkMessage(message)) return
       return callback(message)
     })
-  }
+  },
 })
 
 const withExtractTransfer = (adapter: Adapter, options: Required<Options>): Adapter => ({
@@ -133,17 +145,19 @@ const withExtractTransfer = (adapter: Adapter, options: Required<Options>): Adap
   },
   onMessage: (callback) => {
     return adapter.onMessage(callback)
-  }
+  },
 })
 
 const withDebugLogger = (adapter: Adapter, options: DebugOptions): DebugAdapter => {
   const primaryLabelStyle = {
     message: 'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
     event: 'color: #fff; background: #0ea5e9; border-radius: 3px; padding: 1px 4px;',
-    [MESSAGE_SENDER_TYPE.PROVIDER]: 'color: #fff; background: #8b5cf6; border-radius: 3px; padding: 1px 4px;',
-    [MESSAGE_SENDER_TYPE.INJECTOR]: 'color: #fff; background: #0891b2; border-radius: 3px; padding: 1px 4px;',
+    [MESSAGE_SENDER_TYPE.PROVIDER]:
+      'color: #fff; background: #8b5cf6; border-radius: 3px; padding: 1px 4px;',
+    [MESSAGE_SENDER_TYPE.INJECTOR]:
+      'color: #fff; background: #0891b2; border-radius: 3px; padding: 1px 4px;',
     sendMessage: 'color: #fff; background: #f97316; border-radius: 3px; padding: 1px 4px;',
-    onMessage: 'color: #fff; background: #22c55e; border-radius: 3px; padding: 1px 4px;'
+    onMessage: 'color: #fff; background: #22c55e; border-radius: 3px; padding: 1px 4px;',
   }
   const secondaryLabelStyle = {
     message: 'color: #0ea5e9',
@@ -151,19 +165,19 @@ const withDebugLogger = (adapter: Adapter, options: DebugOptions): DebugAdapter 
     [MESSAGE_SENDER_TYPE.PROVIDER]: 'color: #8b5cf6',
     [MESSAGE_SENDER_TYPE.INJECTOR]: 'color: #0891b2',
     sendMessage: 'color: #f97316',
-    onMessage: 'color: #22c55e'
+    onMessage: 'color: #22c55e',
   }
   const primaryMessageStyle = {
     [MESSAGE_TYPE.APPLY]: 'color: #2563eb',
     [MESSAGE_TYPE.CALLBACK]: 'color: #a855f7',
     [MESSAGE_TYPE.PING]: 'color: #eab308',
-    [MESSAGE_TYPE.PONG]: 'color: #14b8a6'
+    [MESSAGE_TYPE.PONG]: 'color: #14b8a6',
   }
   const secondaryMessageStyle = {
     [MESSAGE_TYPE.APPLY]: 'color: #2563eb',
     [MESSAGE_TYPE.CALLBACK]: 'color: #a855f7',
     [MESSAGE_TYPE.PING]: 'color: #eab308',
-    [MESSAGE_TYPE.PONG]: 'color: #14b8a6'
+    [MESSAGE_TYPE.PONG]: 'color: #14b8a6',
   }
 
   const debugLog = ({ level, method, message, actor = message.sender.type }: DebugLogOptions) => {
@@ -181,7 +195,7 @@ const withDebugLogger = (adapter: Adapter, options: DebugOptions): DebugAdapter 
         '',
         messageStyle[message.type],
         '',
-        message
+        message,
       )
   }
 
@@ -194,11 +208,16 @@ const withDebugLogger = (adapter: Adapter, options: DebugOptions): DebugAdapter 
     onMessage: (callback) => {
       return adapter.onMessage((message) => {
         const _message = message as Message
-        debugLog({ level: 'message', method: 'onMessage', message: _message, actor: options.actor })
+        debugLog({
+          level: 'message',
+          method: 'onMessage',
+          message: _message,
+          actor: options.actor,
+        })
         return callback(message)
       })
     },
-    debugLog
+    debugLog,
   }
 }
 
@@ -219,14 +238,21 @@ const withHeartbeatCheck = (adapter: DebugAdapter, options: Required<Options>): 
   onMessage: (callback) => {
     return adapter.onMessage(callback)
   },
-  debugLog: adapter.debugLog
+  debugLog: adapter.debugLog,
 })
 
 const composeAdapter = (adapter: Adapter, options: DebugOptions) => {
-  return withHeartbeatCheck(withDebugLogger(withExtractTransfer(withCheckMessage(adapter), options), options), options)
+  return withHeartbeatCheck(
+    withDebugLogger(withExtractTransfer(withCheckMessage(adapter), options), options),
+    options,
+  )
 }
 
-const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugAdapter, options: Required<Options>) => {
+const createProvide = <T extends Record<string, any>>(
+  target: T,
+  adapter: DebugAdapter,
+  options: Required<Options>,
+) => {
   adapter.onMessage(async (message) => {
     const _message = message as Message
     if (_message.namespace !== options.namespace) return
@@ -238,7 +264,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
           level: 'event',
           method: 'onMessage',
           message: _message,
-          actor: MESSAGE_SENDER_TYPE.PROVIDER
+          actor: MESSAGE_SENDER_TYPE.PROVIDER,
         })
         const pongMessage: Message = {
           type: MESSAGE_TYPE.PONG,
@@ -247,7 +273,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
           path: _message.path,
           meta: _message.meta,
           namespace: options.namespace,
-          timeStamp: Date.now()
+          timeStamp: Date.now(),
         }
         adapter.sendMessage(pongMessage, [])
         break
@@ -257,7 +283,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
           level: 'event',
           method: 'onMessage',
           message: _message,
-          actor: MESSAGE_SENDER_TYPE.PROVIDER
+          actor: MESSAGE_SENDER_TYPE.PROVIDER,
         })
         try {
           const mapArgs = _message.args?.map((arg) => {
@@ -271,7 +297,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
                   meta: _message.meta,
                   data: args,
                   namespace: options.namespace,
-                  timeStamp: Date.now()
+                  timeStamp: Date.now(),
                 }
                 adapter.sendMessage(callbackMessage, [])
               }
@@ -281,8 +307,9 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
           })
           // @ts-expect-error: initial write
           _message.data = await _message.path.reduce(
-            (that, key, index, path) => (index === path.length - 1 ? that[key](...(mapArgs ?? [])) : that[key]),
-            target
+            (that, key, index, path) =>
+              index === path.length - 1 ? that[key](...(mapArgs ?? [])) : that[key],
+            target,
           )
         } catch (error) {
           // @ts-expect-error: initial write
@@ -297,7 +324,7 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
           error: _message.error,
           meta: _message.meta,
           namespace: options.namespace,
-          timeStamp: Date.now()
+          timeStamp: Date.now(),
         }
         adapter.sendMessage(responseMessage, [])
         break
@@ -307,7 +334,11 @@ const createProvide = <T extends Record<string, any>>(target: T, adapter: DebugA
   return target
 }
 
-const createInject = <T extends Record<string, any>>(source: T, adapter: DebugAdapter, options: Required<Options>) => {
+const createInject = <T extends Record<string, any>>(
+  source: T,
+  adapter: DebugAdapter,
+  options: Required<Options>,
+) => {
   const createProxy = (target: T, path: string[]) => {
     const proxy = new Proxy<T>(target, {
       get(_target, key, receiver) {
@@ -331,7 +362,11 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: DebugAd
          */
         if (
           typeof _target === 'function' &&
-          (key === 'apply' || key === 'call' || key === 'bind' || key === 'length' || key === 'name')
+          (key === 'apply' ||
+            key === 'call' ||
+            key === 'bind' ||
+            key === 'length' ||
+            key === 'name')
         ) {
           return Reflect.get(_target, key, receiver)
         }
@@ -356,7 +391,7 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: DebugAd
                     level: 'event',
                     method: 'onMessage',
                     message: _message,
-                    actor: MESSAGE_SENDER_TYPE.INJECTOR
+                    actor: MESSAGE_SENDER_TYPE.INJECTOR,
                   })
                   arg(..._message.data)
                 })
@@ -377,7 +412,7 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: DebugAd
                 level: 'event',
                 method: 'onMessage',
                 message: _message,
-                actor: MESSAGE_SENDER_TYPE.INJECTOR
+                actor: MESSAGE_SENDER_TYPE.INJECTOR,
               })
               _message.error ? reject(new Error(_message.error)) : resolve(_message.data)
               offMessage?.()
@@ -392,14 +427,14 @@ const createInject = <T extends Record<string, any>>(source: T, adapter: DebugAd
               meta: {},
               callbackIds,
               timeStamp: Date.now(),
-              namespace: options.namespace
+              namespace: options.namespace,
             }
             await adapter.sendMessage(applyMessage, [])
           } catch (error) {
             reject(error)
           }
         })
-      }
+      },
     })
 
     return proxy
@@ -412,8 +447,11 @@ const provideProxy = <T extends Context>(context: T, options: Required<Options>)
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>, ...args: Parameters<T>) =>
     createProvide(
       context(...args) as ReturnType<T>,
-      composeAdapter(adapter as unknown as Adapter, { ...options, actor: MESSAGE_SENDER_TYPE.PROVIDER }),
-      options
+      composeAdapter(adapter as unknown as Adapter, {
+        ...options,
+        actor: MESSAGE_SENDER_TYPE.PROVIDER,
+      }),
+      options,
     )
 }
 
@@ -422,8 +460,11 @@ const injectProxy = <T extends Context>(context: T, options: Required<Options>) 
   return <M extends MessageMeta = MessageMeta>(adapter: Adapter<M>) =>
     createInject(
       {} as ReturnType<T>,
-      composeAdapter(adapter as unknown as Adapter, { ...options, actor: MESSAGE_SENDER_TYPE.INJECTOR }),
-      options
+      composeAdapter(adapter as unknown as Adapter, {
+        ...options,
+        actor: MESSAGE_SENDER_TYPE.INJECTOR,
+      }),
+      options,
     )
 }
 
@@ -463,12 +504,12 @@ export const defineProxy = <T extends Context>(context: T, options?: Options) =>
     heartbeatInterval: options?.heartbeatInterval ?? 300,
     heartbeatTimeout: options?.heartbeatTimeout ?? 1000,
     transfer: options?.transfer ?? false,
-    debug: options?.debug ?? false
+    debug: options?.debug ?? false,
   }
 
   if (mergedOptions.heartbeatTimeout <= mergedOptions.heartbeatInterval) {
     throw new Error(
-      `Invalid heartbeat config: timeout (${mergedOptions.heartbeatTimeout}ms) must exceed interval (${mergedOptions.heartbeatInterval}ms).`
+      `Invalid heartbeat config: timeout (${mergedOptions.heartbeatTimeout}ms) must exceed interval (${mergedOptions.heartbeatInterval}ms).`,
     )
   }
 

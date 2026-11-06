@@ -7,7 +7,7 @@ import { WindowAdapter } from '../service/adapter'
 void (async () => {
   const [provideCounter] = defineProxy(() => new Counter(), {
     namespace: '__iframe-example__',
-    debug: import.meta.env.DEV
+    debug: import.meta.env.DEV,
   })
 
   const counter = provideCounter(new WindowAdapter(window.parent, 'iframe-provider'))

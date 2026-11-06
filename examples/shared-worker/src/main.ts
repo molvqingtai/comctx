@@ -27,7 +27,7 @@ void (async () => {
           <h4 id="worker-value">SharedWorker Value: ${initValue} </h4>
         </div>
       </div>
-    `)
+    `),
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
@@ -40,6 +40,7 @@ void (async () => {
 
   counter.onChange((value) => {
     document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
-    document.querySelector<HTMLDivElement>('#worker-value')!.textContent = `SharedWorker Value: ${value}`
+    document.querySelector<HTMLDivElement>('#worker-value')!.textContent =
+      `SharedWorker Value: ${value}`
   })
 })().catch(console.error)

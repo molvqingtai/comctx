@@ -4,7 +4,7 @@ import type { Adapter } from 'comctx'
 
 const createMockAdapter = (): Adapter => ({
   sendMessage: vi.fn(),
-  onMessage: vi.fn()
+  onMessage: vi.fn(),
 })
 
 describe('isProxy', () => {

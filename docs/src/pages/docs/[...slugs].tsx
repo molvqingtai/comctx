@@ -7,7 +7,7 @@ import {
   DocsPage,
   DocsTitle,
   MarkdownCopyButton,
-  ViewOptionsPopover
+  ViewOptionsPopover,
 } from 'fumadocs-ui/layouts/docs/page'
 import { unstable_notFound } from 'waku/router/server'
 import { gitConfig } from '@/lib/shared'
@@ -21,10 +21,10 @@ export default function Page({ slugs }: PageProps<'/docs/[...slugs]'>) {
   const markdownUrl = getPageMarkdownUrl(page).url
   return (
     <DocsPage toc={page.data.toc}>
-      <meta property="og:image" content={getPageImage(slugs).url} />
+      <meta property='og:image' content={getPageImage(slugs).url} />
       <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription className="mb-0">{page.data.description}</DocsDescription>
-      <div className="flex flex-row gap-2 items-center border-b pt-2 pb-6">
+      <DocsDescription className='mb-0'>{page.data.description}</DocsDescription>
+      <div className='flex flex-row gap-2 items-center border-b pt-2 pb-6'>
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
           markdownUrl={markdownUrl}
@@ -35,7 +35,7 @@ export default function Page({ slugs }: PageProps<'/docs/[...slugs]'>) {
         <MDX
           components={getMDXComponents({
             // this allows you to link to other pages with relative file paths
-            a: createRelativeLink(source, page)
+            a: createRelativeLink(source, page),
           })}
         />
       </DocsBody>
@@ -44,10 +44,12 @@ export default function Page({ slugs }: PageProps<'/docs/[...slugs]'>) {
 }
 
 export async function getConfig() {
-  const pages = source.generateParams().map((item) => (item.lang ? [item.lang, ...item.slug] : item.slug))
+  const pages = source
+    .generateParams()
+    .map((item) => (item.lang ? [item.lang, ...item.slug] : item.slug))
 
   return {
     render: 'static' as const,
-    staticPaths: pages
+    staticPaths: pages,
   } as const
 }

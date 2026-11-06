@@ -11,22 +11,14 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "postinstall": "wxt prepare",
-    "lint": "eslint --fix --cache",
     "check": "tsc --noEmit"
   },
   "dependencies": {
     "comctx": "workspace:*"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^25.9.2",
-    "eslint": "^10.4.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.6",
-    "globals": "^17.6.0",
-    "prettier": "^3.8.3",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.60.1",
-    "wxt": "^0.21.4"
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "wxt": "^0.21.5"
   }
 }

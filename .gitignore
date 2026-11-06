@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 .output
 .eslintcache
+.oxlintcache
 dist
 stats.html
 stats-*.json

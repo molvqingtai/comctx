@@ -1,12 +1,15 @@
 import { Adapter, SendMessage, OnMessage } from 'comctx'
 
-export type WindowEndpoint = Pick<Window, 'postMessage' | 'addEventListener' | 'removeEventListener'>
+export type WindowEndpoint = Pick<
+  Window,
+  'postMessage' | 'addEventListener' | 'removeEventListener'
+>
 
 export class WindowAdapter implements Adapter {
   constructor(
     private window: WindowEndpoint,
     public name?: string,
-    private targetOrigin = '*'
+    private targetOrigin = '*',
   ) {}
 
   sendMessage: SendMessage = (message) => {

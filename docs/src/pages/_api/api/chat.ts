@@ -29,8 +29,8 @@ async function createSearchServer() {
     document: {
       id: 'url',
       index: ['title', 'description', 'content'],
-      store: true
-    }
+      store: true,
+    },
   })
 
   const docs = await chunkedAll(
@@ -41,9 +41,9 @@ async function createSearchServer() {
         title: page.data.title,
         description: page.data.description,
         url: page.url,
-        content: await page.data.getText('processed')
+        content: await page.data.getText('processed'),
       } as CustomDocument
-    })
+    }),
   )
 
   for (const doc of docs) {
@@ -63,7 +63,7 @@ async function chunkedAll<O>(promises: Promise<O>[]): Promise<O[]> {
 }
 
 const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY
+  apiKey: process.env.OPENROUTER_API_KEY,
 })
 
 /** System prompt, you can update it to provide more specific information */
@@ -71,7 +71,7 @@ const systemPrompt = [
   'You are an AI assistant for a documentation site.',
   'Use the `search` tool to retrieve relevant docs context before answering when needed.',
   'The `search` tool returns raw JSON results from documentation. Use those results to ground your answer and cite sources as markdown links using the document `url` field when available.',
-  'If you cannot find the answer in search results, say you do not know and suggest a better search query.'
+  'If you cannot find the answer in search results, say you do not know and suggest a better search query.',
 ].join('\n')
 
 export async function POST(req: Request, _context: ApiContext<'/api/chat'>) {
@@ -81,7 +81,7 @@ export async function POST(req: Request, _context: ApiContext<'/api/chat'>) {
     model: openrouter.chat(process.env.OPENROUTER_MODEL ?? 'anthropic/claude-3.5-sonnet'),
     stopWhen: stepCountIs(5),
     tools: {
-      search: searchTool
+      search: searchTool,
     },
     messages: [
       { role: 'system', content: systemPrompt },
@@ -90,12 +90,12 @@ export async function POST(req: Request, _context: ApiContext<'/api/chat'>) {
           if (part.type === 'data-client')
             return {
               type: 'text',
-              text: `[Client Context: ${JSON.stringify(part.data)}]`
+              text: `[Client Context: ${JSON.stringify(part.data)}]`,
             }
-        }
-      }))
+        },
+      })),
     ],
-    toolChoice: 'auto'
+    toolChoice: 'auto',
   })
 
   return result.toUIMessageStreamResponse()
@@ -107,10 +107,10 @@ const searchTool = tool({
   description: 'Search the docs content and return raw JSON results.',
   inputSchema: z.object({
     query: z.string(),
-    limit: z.number().int().min(1).max(100).default(10)
+    limit: z.number().int().min(1).max(100).default(10),
   }),
   async execute({ query, limit }) {
     const search = await searchServer
     return await search.searchAsync(query, { limit, merge: true, enrich: true })
-  }
+  },
 })

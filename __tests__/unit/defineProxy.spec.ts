@@ -29,7 +29,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -37,15 +37,15 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(
       () => ({
         getValue: async () => 42,
-        add: async (a: number, b: number) => a + b
+        add: async (a: number, b: number) => a + b,
       }),
-      { heartbeatCheck: false }
+      { heartbeatCheck: false },
     )
 
     provide(providerAdapter)
@@ -62,7 +62,7 @@ describe('defineProxy', () => {
     expect(() => {
       defineProxy(() => ({}), {
         heartbeatInterval: 1000,
-        heartbeatTimeout: 500
+        heartbeatTimeout: 500,
       })
     }).toThrow('Invalid heartbeat config')
   })
@@ -70,7 +70,7 @@ describe('defineProxy', () => {
   test('should not cache provider target by default', () => {
     const mockAdapter: Adapter = {
       sendMessage: vi.fn(),
-      onMessage: vi.fn()
+      onMessage: vi.fn(),
     }
     const context = vi.fn((value: number) => ({ value }))
     const [provide] = defineProxy(context, { heartbeatCheck: false })
@@ -87,7 +87,7 @@ describe('defineProxy', () => {
   test('should not cache injector proxy by default', () => {
     const mockAdapter: Adapter = {
       sendMessage: vi.fn(),
-      onMessage: vi.fn()
+      onMessage: vi.fn(),
     }
     const [, inject] = defineProxy(() => ({ getValue: () => 1 }), { heartbeatCheck: false })
 
@@ -105,7 +105,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -113,16 +113,16 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(
       () => ({
         onChange: (callback: (value: number) => void) => {
           callback(100)
-        }
+        },
       }),
-      { heartbeatCheck: false }
+      { heartbeatCheck: false },
     )
 
     provide(providerAdapter)
@@ -139,18 +139,20 @@ describe('defineProxy', () => {
   test('should timeout when provider is unavailable', async () => {
     const injectorAdapter: Adapter = {
       sendMessage: vi.fn(),
-      onMessage: vi.fn()
+      onMessage: vi.fn(),
     }
 
     const [, inject] = defineProxy(() => ({ getValue: () => 42 }), {
       heartbeatCheck: true,
       heartbeatInterval: 100,
-      heartbeatTimeout: 200
+      heartbeatTimeout: 200,
     })
 
     const proxy = inject(injectorAdapter)
 
-    await expect(proxy.getValue()).rejects.toThrow('Provider unavailable: heartbeat check timeout 200ms')
+    await expect(proxy.getValue()).rejects.toThrow(
+      'Provider unavailable: heartbeat check timeout 200ms',
+    )
   })
 
   test('should support nested proxy (proxy wrapping proxy)', async () => {
@@ -163,7 +165,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         backgroundEventHub.on('content-script-to-background', callback)
         return () => backgroundEventHub.off('content-script-to-background', callback)
-      }
+      },
     }
 
     const backgroundInjectorAdapter: Adapter = {
@@ -171,7 +173,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         backgroundEventHub.on('background-to-content-script', callback)
         return () => backgroundEventHub.off('background-to-content-script', callback)
-      }
+      },
     }
 
     // Content Script <-> Page adapters
@@ -180,7 +182,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         contentScriptEventHub.on('page-to-content-script', callback)
         return () => contentScriptEventHub.off('page-to-content-script', callback)
-      }
+      },
     }
 
     const pageInjectorAdapter: Adapter = {
@@ -188,23 +190,25 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         contentScriptEventHub.on('content-script-to-page', callback)
         return () => contentScriptEventHub.off('content-script-to-page', callback)
-      }
+      },
     }
 
     // Background provides actual implementation
     const [provideBackground, injectBackground] = defineProxy(
       () => ({
         getValue: async () => 42,
-        add: async (a: number, b: number) => a + b
+        add: async (a: number, b: number) => a + b,
       }),
-      { heartbeatCheck: false }
+      { heartbeatCheck: false },
     )
 
     provideBackground(backgroundProviderAdapter)
     const backgroundProxy = injectBackground(backgroundInjectorAdapter)
 
     // Content Script bridges background proxy to page
-    const [provideContentScript, injectContentScript] = defineProxy(() => backgroundProxy, { heartbeatCheck: false })
+    const [provideContentScript, injectContentScript] = defineProxy(() => backgroundProxy, {
+      heartbeatCheck: false,
+    })
 
     provideContentScript(contentScriptProviderAdapter)
     const pageProxy = injectContentScript(pageInjectorAdapter)
@@ -225,7 +229,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -233,7 +237,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(
@@ -241,10 +245,10 @@ describe('defineProxy', () => {
         value: 1,
         child: {
           value: 10,
-          nested: new Counter(100)
-        }
+          nested: new Counter(100),
+        },
       }),
-      { heartbeatCheck: false }
+      { heartbeatCheck: false },
     )
 
     const target = provide(providerAdapter)
@@ -286,7 +290,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -294,18 +298,18 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(
       () => ({
         foo: {
           bar: {
-            getValue: new Counter(100).getValue.bind(undefined)
-          }
-        }
+            getValue: new Counter(100).getValue.bind(undefined),
+          },
+        },
       }),
-      { heartbeatCheck: false }
+      { heartbeatCheck: false },
     )
 
     const target = provide(providerAdapter)
@@ -326,7 +330,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -334,18 +338,18 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(
       () => ({
         foo: {
           bar: {
-            getValue: async () => 123
-          }
-        }
+            getValue: async () => 123,
+          },
+        },
       }),
-      { heartbeatCheck: false }
+      { heartbeatCheck: false },
     )
 
     provide(providerAdapter)
@@ -365,7 +369,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -374,12 +378,12 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
       heartbeatCheck: false,
-      debug: true
+      debug: true,
     })
 
     try {
@@ -398,10 +402,13 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        })
+          path: ['getValue'],
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:event%c %cinjector%c %csendMessage%c %capply%c',
@@ -414,10 +421,13 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        })
+          path: ['getValue'],
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:message%c %cprovider%c %conMessage%c %capply%c',
@@ -430,10 +440,13 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        })
+          path: ['getValue'],
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:message%c %cprovider%c %csendMessage%c %capply%c',
@@ -446,11 +459,14 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.PROVIDER,
+            name: 'provider-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue'],
-          data: 42
-        })
+          data: 42,
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:event%c %cprovider%c %conMessage%c %capply%c',
@@ -463,10 +479,13 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        })
+          path: ['getValue'],
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:message%c %cinjector%c %conMessage%c %capply%c',
@@ -479,11 +498,14 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.PROVIDER,
+            name: 'provider-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue'],
-          data: 42
-        })
+          data: 42,
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:event%c %cinjector%c %conMessage%c %capply%c',
@@ -496,11 +518,14 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.PROVIDER,
+            name: 'provider-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
           path: ['getValue'],
-          data: 42
-        })
+          data: 42,
+        }),
       )
     } finally {
       debugSpy.mockRestore()
@@ -517,7 +542,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -526,13 +551,13 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
       heartbeatInterval: 10,
       heartbeatTimeout: 100,
-      debug: true
+      debug: true,
     })
 
     try {
@@ -551,9 +576,12 @@ describe('defineProxy', () => {
         'color: #eab308',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
-          type: MESSAGE_TYPE.PING
-        })
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
+          type: MESSAGE_TYPE.PING,
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:event%c %cprovider%c %conMessage%c %cping%c',
@@ -566,9 +594,12 @@ describe('defineProxy', () => {
         'color: #eab308',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
-          type: MESSAGE_TYPE.PING
-        })
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
+          type: MESSAGE_TYPE.PING,
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:message%c %cinjector%c %conMessage%c %cpong%c',
@@ -581,9 +612,12 @@ describe('defineProxy', () => {
         'color: #14b8a6',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
-          type: MESSAGE_TYPE.PONG
-        })
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.PROVIDER,
+            name: 'provider-test',
+          }),
+          type: MESSAGE_TYPE.PONG,
+        }),
       )
       expect(debugSpy).toHaveBeenCalledWith(
         '%ccomctx:event%c %cinjector%c %conMessage%c %cpong%c',
@@ -596,9 +630,12 @@ describe('defineProxy', () => {
         'color: #14b8a6',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.PROVIDER, name: 'provider-test' }),
-          type: MESSAGE_TYPE.PONG
-        })
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.PROVIDER,
+            name: 'provider-test',
+          }),
+          type: MESSAGE_TYPE.PONG,
+        }),
       )
     } finally {
       debugSpy.mockRestore()
@@ -615,7 +652,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -624,12 +661,12 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
       heartbeatCheck: false,
-      debug: 'event'
+      debug: 'event',
     })
 
     try {
@@ -648,12 +685,17 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        })
+          path: ['getValue'],
+        }),
       )
-      expect(debugSpy.mock.calls.some(([format]) => String(format).includes('comctx:message'))).toBe(false)
+      expect(
+        debugSpy.mock.calls.some(([format]) => String(format).includes('comctx:message')),
+      ).toBe(false)
     } finally {
       debugSpy.mockRestore()
     }
@@ -669,7 +711,7 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('injector-to-provider', callback)
         return () => eventHub.off('injector-to-provider', callback)
-      }
+      },
     }
 
     const injectorAdapter: Adapter = {
@@ -678,12 +720,12 @@ describe('defineProxy', () => {
       onMessage: (callback) => {
         eventHub.on('provider-to-injector', callback)
         return () => eventHub.off('provider-to-injector', callback)
-      }
+      },
     }
 
     const [provide, inject] = defineProxy(() => ({ getValue: () => 42 }), {
       heartbeatCheck: false,
-      debug: 'message'
+      debug: 'message',
     })
 
     try {
@@ -702,12 +744,17 @@ describe('defineProxy', () => {
         'color: #2563eb',
         '',
         expect.objectContaining({
-          sender: expect.objectContaining({ type: MESSAGE_SENDER_TYPE.INJECTOR, name: 'injector-test' }),
+          sender: expect.objectContaining({
+            type: MESSAGE_SENDER_TYPE.INJECTOR,
+            name: 'injector-test',
+          }),
           type: MESSAGE_TYPE.APPLY,
-          path: ['getValue']
-        })
+          path: ['getValue'],
+        }),
       )
-      expect(debugSpy.mock.calls.some(([format]) => String(format).includes('comctx:event'))).toBe(false)
+      expect(debugSpy.mock.calls.some(([format]) => String(format).includes('comctx:event'))).toBe(
+        false,
+      )
     } finally {
       debugSpy.mockRestore()
     }

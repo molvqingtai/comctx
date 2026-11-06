@@ -13,15 +13,15 @@ export default function Layout({ children }: { children: ReactNode }) {
       <AISearch>
         <AISearchPanel />
         <AISearchTrigger
-          position="float"
+          position='float'
           className={cn(
             buttonVariants({
               variant: 'secondary',
-              className: 'text-fd-muted-foreground rounded-2xl'
-            })
+              className: 'text-fd-muted-foreground rounded-2xl',
+            }),
           )}
         >
-          <MessageCircleIcon className="size-4.5" />
+          <MessageCircleIcon className='size-4.5' />
           Ask AI
         </AISearchTrigger>
       </AISearch>

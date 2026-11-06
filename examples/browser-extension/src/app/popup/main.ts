@@ -7,7 +7,7 @@ import createElement from '@/utils/createElement'
 void (async () => {
   const [, injectBackgroundCounter] = defineProxy(() => ({}) as Counter, {
     namespace: browser.runtime.id,
-    debug: import.meta.env.DEV
+    debug: import.meta.env.DEV,
   })
 
   // Use the proxy object
@@ -29,7 +29,7 @@ void (async () => {
           <h4 id="background-value">Background Value: ${initValue} </h4>
         </div>
       </div>
-    `)
+    `),
   )
 
   document.querySelector<HTMLButtonElement>('#decrement')!.addEventListener('click', async () => {
@@ -43,6 +43,7 @@ void (async () => {
   counter.onChange((value) => {
     console.log('popup-page:', value)
     document.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
-    document.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
+    document.querySelector<HTMLDivElement>('#background-value')!.textContent =
+      `Background Value: ${value}`
   })
 })().catch(console.error)

@@ -10,11 +10,11 @@ export default defineConfig({
       injectRegister: false,
       manifest: false,
       injectManifest: {
-        injectionPoint: undefined
+        injectionPoint: undefined,
       },
       devOptions: {
-        enabled: true
-      }
-    })
-  ]
+        enabled: true,
+      },
+    }),
+  ],
 })

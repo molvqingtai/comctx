@@ -2,12 +2,12 @@ export const MESSAGE_TYPE = {
   APPLY: 'apply',
   CALLBACK: 'callback',
   PING: 'ping',
-  PONG: 'pong'
+  PONG: 'pong',
 } as const
 
 export const MESSAGE_SENDER_TYPE = {
   PROVIDER: 'provider',
-  INJECTOR: 'injector'
+  INJECTOR: 'injector',
 } as const
 
 export type MessageType = (typeof MESSAGE_TYPE)[keyof typeof MESSAGE_TYPE]
@@ -41,7 +41,9 @@ export const checkMessage = (message?: Partial<Message>) => {
   const isId = !!message?.id && typeof message.id === 'string'
 
   const isPath =
-    !!message?.path && Array.isArray(message.path) && message.path.every((path) => typeof path === 'string')
+    !!message?.path &&
+    Array.isArray(message.path) &&
+    message.path.every((path) => typeof path === 'string')
 
   const isSender =
     !!message?.sender &&
@@ -52,7 +54,8 @@ export const checkMessage = (message?: Partial<Message>) => {
 
   const isCallbackIds =
     typeof message?.callbackIds === 'undefined' ||
-    (Array.isArray(message.callbackIds) && message.callbackIds.every((id) => typeof id === 'string'))
+    (Array.isArray(message.callbackIds) &&
+      message.callbackIds.every((id) => typeof id === 'string'))
 
   const isArgs = typeof message?.args === 'undefined' || Array.isArray(message.args)
 
@@ -65,6 +68,15 @@ export const checkMessage = (message?: Partial<Message>) => {
   const isTimeStamp = !!message?.timeStamp && typeof message.timeStamp === 'number'
 
   return (
-    isType && isId && isPath && isSender && isCallbackIds && isArgs && isError && isMeta && isNamespace && isTimeStamp
+    isType &&
+    isId &&
+    isPath &&
+    isSender &&
+    isCallbackIds &&
+    isArgs &&
+    isError &&
+    isMeta &&
+    isNamespace &&
+    isTimeStamp
   )
 }

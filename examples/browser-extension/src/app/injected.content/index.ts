@@ -17,7 +17,7 @@ export default defineContentScript({
 
     const [, injectContentCounter] = defineProxy(() => ({}) as Counter, {
       namespace: '__comctx-example__',
-      debug: import.meta.env.DEV
+      debug: import.meta.env.DEV,
     })
 
     const counter = injectContentCounter(new CustomEventInjectAdapter('injected'))
@@ -47,8 +47,9 @@ export default defineContentScript({
     counter.onChange((value) => {
       console.log('injected-script:', value)
       app.querySelector<HTMLDivElement>('#value')!.textContent = value.toString()
-      app.querySelector<HTMLDivElement>('#background-value')!.textContent = `Background Value: ${value}`
+      app.querySelector<HTMLDivElement>('#background-value')!.textContent =
+        `Background Value: ${value}`
     })
     document.body.append(app)
-  }
+  },
 })

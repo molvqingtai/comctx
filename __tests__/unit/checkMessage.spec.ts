@@ -10,7 +10,7 @@ describe('checkMessage', () => {
     sender: { type: MESSAGE_SENDER_TYPE.INJECTOR },
     meta: {},
     namespace: '__comctx__',
-    timeStamp: Date.now()
+    timeStamp: Date.now(),
   }
 
   test('should return true for valid message', () => {
@@ -23,8 +23,11 @@ describe('checkMessage', () => {
     expect(checkMessage({ ...validMessage, type: 'invalid' as any })).toBe(false)
     expect(checkMessage({ ...validMessage, id: '' })).toBe(false)
     expect(checkMessage({ ...validMessage, sender: 'injector' as any })).toBe(false)
-    expect(checkMessage({ ...validMessage, sender: { type: MESSAGE_SENDER_TYPE.INJECTOR, name: 1 } as any })).toBe(
-      false
-    )
+    expect(
+      checkMessage({
+        ...validMessage,
+        sender: { type: MESSAGE_SENDER_TYPE.INJECTOR, name: 1 } as any,
+      }),
+    ).toBe(false)
   })
 })
