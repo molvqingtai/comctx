@@ -21,7 +21,7 @@
     "flexsearch": "^0.8.212",
     "fumadocs-core": "16.17.4",
     "fumadocs-mdx": "15.0.11",
-    "fumadocs-ui": "16.9.3",
+    "fumadocs-ui": "16.18.0",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "lucide-react": "^1.17.0",
     "react": "^19.2.9",
